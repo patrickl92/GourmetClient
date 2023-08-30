@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Windows;
 
 namespace GourmetClient
 {
@@ -10,6 +11,14 @@ namespace GourmetClient
         public DownloadUpdateWindow()
         {
             InitializeComponent();
+
+            Closing += OnClosing;
+        }
+
+        private void OnClosing(object sender, CancelEventArgs e)
+        {
+            Closing -= OnClosing;
+            CancelButton.Command?.Execute(null);
         }
 
         public Task StartUpdate(ReleaseDescription updateRelease)
