@@ -1,2 +1,2 @@
 # GourmetClient
-Hosting for releases of the GourmetClient application
+Vereinfachte Essenbestellung für Gourmet
