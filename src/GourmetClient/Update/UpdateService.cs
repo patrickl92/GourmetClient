@@ -146,10 +146,13 @@ namespace GourmetClient.Update
             {
                 var backupLocation = GetBackupPath();
 
-                if (Directory.Exists(backupLocation))
+                await Task.Run(() =>
                 {
-                    await Task.Run(() => Directory.Delete(backupLocation, true), cancellationToken);
-                }
+                    if (Directory.Exists(backupLocation))
+                    {
+                        Directory.Delete(backupLocation, true);
+                    }
+                }, cancellationToken);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -207,7 +210,15 @@ namespace GourmetClient.Update
         {
             try
             {
-                await Task.Run(() => Directory.Delete(GetBackupPath(), true), cancellationToken);
+                await Task.Run(() =>
+                {
+                    var backupPath = GetBackupPath();
+
+                    if (Directory.Exists(backupPath))
+                    {
+                        Directory.Delete(GetBackupPath(), true);
+                    }
+                }, cancellationToken);
             }
             catch (IOException exception)
             {
