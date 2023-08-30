@@ -1,0 +1,108 @@
+﻿<UserControl x:Class="GourmetClient.Views.NotificationsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:viewModels="clr-namespace:GourmetClient.ViewModels"
+             xmlns:notifications="clr-namespace:GourmetClient.Notifications"
+             xmlns:behaviors="clr-namespace:GourmetClient.Behaviors"
+             x:Name="Root"
+             d:DataContext="{d:DesignInstance viewModels:NotificationsViewModel,
+											  IsDesignTimeCreatable=False}"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+		<DataTemplate x:Key="UpdateNotificationButtonTemplate"
+					DataType="{x:Type notifications:UpdateNotification}">
+			<Button Margin="2"
+					Command="{Binding DataContext.StartUpdateCommand,
+										  ElementName=Root}"
+					CommandParameter="{Binding}"
+					Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
+					ToolTip="Aktualisierung starten">
+				<Image Width="16"
+					   Height="16"
+					   Source="/Resources/Icons/Update.png" />
+			</Button>
+		</DataTemplate>
+
+		<DataTemplate x:Key="ExceptionNotificationButtonTemplate"
+					DataType="{x:Type notifications:ExceptionNotification}">
+			<Button Margin="2"
+					Command="{Binding DataContext.ShowExceptionDetailsCommand,
+										  ElementName=Root}"
+					CommandParameter="{Binding}"
+					Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
+					ToolTip="Detailinformation anzeigen">
+				<Image Width="16"
+					   Height="16"
+					   Source="/Resources/Icons/ShowDetailedMessage.png" />
+			</Button>
+		</DataTemplate>
+
+		<DataTemplate x:Key="EmptyTemplate" />
+
+		<behaviors:NotificationButtonTemplateSelector x:Key="NotificationButtonTemplateSelector"
+													  UpdateNotificationTemplate="{StaticResource UpdateNotificationButtonTemplate}"
+													  ExceptionNotificationTemplate="{StaticResource ExceptionNotificationButtonTemplate}"
+													  EmptyTemplate="{StaticResource EmptyTemplate}" />
+
+		<DataTemplate x:Key="NotificationTemplate"
+					DataType="{x:Type notifications:Notification}">
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="Auto" />
+					<ColumnDefinition />
+					<ColumnDefinition Width="Auto" />
+					<ColumnDefinition Width="Auto" />
+				</Grid.ColumnDefinitions>
+				<Image Grid.Column="0"
+					   Width="16"
+					   Height="16"
+					   Margin="5,2,2,2">
+					<Image.Style>
+						<Style TargetType="{x:Type Image}">
+							<Style.Triggers>
+								<DataTrigger Binding="{Binding NotificationType}"
+											 Value="{x:Static notifications:NotificationType.Information}">
+									<Setter Property="Source" Value="/Resources/Icons/Information_small.png" />
+								</DataTrigger>
+								<DataTrigger Binding="{Binding NotificationType}"
+											 Value="{x:Static notifications:NotificationType.Warning}">
+									<Setter Property="Source" Value="/Resources/Icons/Warning.png" />
+								</DataTrigger>
+								<DataTrigger Binding="{Binding NotificationType}"
+											 Value="{x:Static notifications:NotificationType.Error}">
+									<Setter Property="Source" Value="/Resources/Icons/Error.png" />
+								</DataTrigger>
+							</Style.Triggers>
+						</Style>
+					</Image.Style>
+				</Image>
+				<TextBlock Grid.Column="1"
+						   Margin="5,0"
+						   VerticalAlignment="Center"
+						   FontSize="14"
+						   Text="{Binding Message}"
+						   TextTrimming="CharacterEllipsis" />
+				<ContentControl Grid.Column="2"
+								Content="{Binding}"
+								ContentTemplateSelector="{StaticResource NotificationButtonTemplateSelector}" />
+				<Button Grid.Column="3"
+						Margin="2"
+						Command="{Binding DataContext.DismissNotificationCommand,
+										  ElementName=Root}"
+						CommandParameter="{Binding}"
+						Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
+						ToolTip="Benachrichtigung entfernen">
+					<Image Width="16"
+						   Height="16"
+						   Source="/Resources/Icons/DismissNotification.png" />
+				</Button>
+			</Grid>
+		</DataTemplate>
+	</UserControl.Resources>
+
+	<ItemsControl ItemTemplate="{StaticResource NotificationTemplate}"
+				ItemsSource="{Binding Notifications}" />
+</UserControl>

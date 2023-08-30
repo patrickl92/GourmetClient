@@ -1,0 +1,28 @@
+﻿Version 1.0.0
+	- Initial release
+
+Version 1.0.1
+	- Fixed update error when there was no meal ordered
+
+Version 1.1.0
+	- Fixed update error when there was available meal to order
+	- Version of application is shown in UI
+	- Added white background to application icon
+
+Version 1.1.1
+	- Adapted colors of icons
+
+Version 2.0.0
+	- Changed target framework to .NET 5.0
+	- Disabled single-file, ready-to-run and trimmed publish to increase performance
+
+Version 2.0.1
+	- Fixed unhandled exception at login when updating the cache
+	- Added exception handling for corrupted settings file
+
+Version 2.1.0
+	- Fixed that icons were not shown if the menu name is too long
+	- Adapted parsing of HTML due to changed content
+
+Version 2.1.1
+	- Fixed that the order of the days in the UI was not correct sometimes

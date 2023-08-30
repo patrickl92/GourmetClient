@@ -1,0 +1,61 @@
+﻿<UserControl x:Class="GourmetClient.Views.AboutView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:GourmetClient.ViewModels"
+             x:Name="Root"
+             d:DataContext="{d:DesignInstance viewModels:AboutViewModel,
+                                              IsDesignTimeCreatable=False}"
+             d:DesignHeight="150"
+             d:DesignWidth="600"
+             mc:Ignorable="d">
+	<UserControl.Resources>
+		<Style x:Key="LinkButton"
+		       TargetType="Button">
+			<Setter Property="Template">
+				<Setter.Value>
+					<ControlTemplate TargetType="Button">
+						<ContentPresenter />
+					</ControlTemplate>
+				</Setter.Value>
+			</Setter>
+			<Setter Property="Cursor" Value="Hand" />
+			<Setter Property="Foreground" Value="Blue" />
+			<Style.Triggers>
+				<Trigger Property="IsMouseOver" Value="True">
+					<Setter Property="Foreground" Value="Red" />
+				</Trigger>
+			</Style.Triggers>
+		</Style>
+	</UserControl.Resources>
+	<StackPanel Orientation="Vertical">
+		<StackPanel Margin="10,10,10,5"
+		            Orientation="Horizontal">
+			<TextBlock Margin="0,0,10,0"
+			           Text="{Binding AppVersion, StringFormat='{}Version: {0}'}" />
+			<Button VerticalAlignment="Center"
+			        Command="{Binding ShowReleaseNotesCommand}"
+			        Content="Versionsinformationen"
+			        Style="{StaticResource LinkButton}" />
+		</StackPanel>
+
+		<TextBlock Margin="10,5,10,5"
+		           Text="Dieses Programm wird ohne Garantie ausgeliefert. Verwendung auf eigene Verantwortung."
+		           TextWrapping="Wrap" />
+		<StackPanel Margin="10,5"
+		            Orientation="Horizontal">
+			<TextBlock Text="Icons made by " />
+			<Button x:Name="IconAuthorLinkButton"
+			        Command="{Binding OpenIconAuthorWebPageCommand}"
+			        Content="Smashicons"
+			        Style="{StaticResource LinkButton}" />
+			<TextBlock Text=" from " />
+			<Button x:Name="FlaticonLinkButton"
+			        Command="{Binding OpenIconWebPageCommand}"
+			        Content="Flaticon"
+			        Style="{StaticResource LinkButton}" />
+			<TextBlock Text="." />
+		</StackPanel>
+	</StackPanel>
+</UserControl>

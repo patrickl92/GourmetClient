@@ -1,0 +1,550 @@
+﻿<views:InitializableView x:Class="GourmetClient.Views.MealOrderView"
+                         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                         xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+                         xmlns:behaviors="clr-namespace:GourmetClient.Behaviors"
+                         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                         xmlns:system="clr-namespace:System;assembly=System.Runtime"
+                         xmlns:viewModels="clr-namespace:GourmetClient.ViewModels"
+                         xmlns:views="clr-namespace:GourmetClient.Views"
+                         d:DataContext="{d:DesignInstance viewModels:MealOrderViewModel,
+                                                          IsDesignTimeCreatable=False}"
+                         d:DesignHeight="450"
+                         d:DesignWidth="800"
+                         mc:Ignorable="d">
+	<views:InitializableView.Resources>
+		<behaviors:BoolInvertConverter x:Key="BoolInvertConverter" />
+		<behaviors:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+
+		<Brush x:Key="ActionBarBackgroundBrush">#F2F2F2</Brush>
+		<Brush x:Key="DayBackgroundBrush">#F2F2F2</Brush>
+
+		<Style x:Key="BorderOverlayStyle"
+		       TargetType="{x:Type Border}">
+			<Setter Property="Background" Value="LightGray" />
+			<Setter Property="Opacity" Value="0.4" />
+		</Style>
+
+		<Style x:Key="ActionBarMenuButtonStyle"
+		       BasedOn="{StaticResource {x:Static ToolBar.ButtonStyleKey}}"
+		       TargetType="{x:Type Button}">
+			<Setter Property="IsEnabled" Value="{Binding IsChecked, ElementName=ShowBillToggleButton, Converter={StaticResource BoolInvertConverter}}" />
+		</Style>
+
+		<Style x:Key="ActionBarIconStyle"
+		       TargetType="{x:Type Image}">
+			<Setter Property="Width" Value="32" />
+			<Setter Property="Height" Value="32" />
+		</Style>
+
+		<DataTemplate x:Key="MealTemplate"
+		              DataType="{x:Type viewModels:GourmetMenuMealViewModel}">
+			<Border Width="150"
+			        Height="120"
+			        Background="White"
+			        BorderBrush="{StaticResource DayBackgroundBrush}"
+			        BorderThickness="0,2">
+				<Button Margin="10,0"
+				        HorizontalAlignment="Stretch"
+				        VerticalAlignment="Stretch"
+				        HorizontalContentAlignment="Stretch"
+				        VerticalContentAlignment="Top"
+				        Command="{Binding DataContext.ToggleMealOrderedMarkCommand, ElementName=Root, Mode=OneTime}"
+				        CommandParameter="{Binding}"
+				        Cursor="Hand"
+				        Focusable="False"
+				        Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+					<DockPanel Margin="0,10,0,0">
+						<Grid DockPanel.Dock="Top">
+							<Grid.ColumnDefinitions>
+								<ColumnDefinition />
+								<ColumnDefinition Width="Auto" />
+								<ColumnDefinition Width="Auto" />
+							</Grid.ColumnDefinitions>
+							<TextBlock Grid.Column="0"
+							           DockPanel.Dock="Left"
+							           FontSize="14"
+							           FontWeight="SemiBold">
+								<TextBlock.Style>
+									<Style TargetType="{x:Type TextBlock}">
+										<Setter Property="Text" Value="{Binding MealName}" />
+										<Style.Triggers>
+											<DataTrigger Binding="{Binding MealDescription}"
+											             Value="">
+												<Setter Property="Text" Value="Menü" />
+											</DataTrigger>
+										</Style.Triggers>
+									</Style>
+								</TextBlock.Style>
+							</TextBlock>
+							<Image Grid.Column="1"
+							       Width="16"
+							       Height="16"
+							       DockPanel.Dock="Right"
+							       ToolTipService.ShowOnDisabled="True">
+								<Image.Style>
+									<Style TargetType="{x:Type Image}">
+										<Style.Triggers>
+											<DataTrigger Binding="{Binding MealState}"
+											             Value="{x:Static viewModels:GourmetMenuMealState.None}">
+												<Setter Property="Visibility" Value="Collapsed" />
+											</DataTrigger>
+											<DataTrigger Binding="{Binding MealState}"
+											             Value="{x:Static viewModels:GourmetMenuMealState.NotAvailable}">
+												<Setter Property="Source" Value="/Resources/Icons/MealNotAvailable.png" />
+												<Setter Property="ToolTip" Value="Menü kann nicht bestellt werden" />
+											</DataTrigger>
+											<DataTrigger Binding="{Binding MealState}"
+											             Value="{x:Static viewModels:GourmetMenuMealState.MarkedForOrder}">
+												<Setter Property="Source" Value="/Resources/Icons/MealMarkedForOrder.png" />
+												<Setter Property="ToolTip" Value="Menü wird bestellt" />
+											</DataTrigger>
+											<DataTrigger Binding="{Binding MealState}"
+											             Value="{x:Static viewModels:GourmetMenuMealState.MarkedForCancel}">
+												<Setter Property="Source" Value="/Resources/Icons/MealMarkedForCancel.png" />
+												<Setter Property="ToolTip" Value="Menü wird abbestellt" />
+											</DataTrigger>
+											<MultiDataTrigger>
+												<MultiDataTrigger.Conditions>
+													<Condition Binding="{Binding MealState}" Value="{x:Static viewModels:GourmetMenuMealState.Ordered}" />
+													<Condition Binding="{Binding IsOrderCancelable}" Value="True" />
+												</MultiDataTrigger.Conditions>
+												<Setter Property="Source" Value="/Resources/Icons/MealOrdered.png" />
+												<Setter Property="ToolTip" Value="Menü ist bestellt" />
+											</MultiDataTrigger>
+											<MultiDataTrigger>
+												<MultiDataTrigger.Conditions>
+													<Condition Binding="{Binding MealState}" Value="{x:Static viewModels:GourmetMenuMealState.Ordered}" />
+													<Condition Binding="{Binding IsOrderCancelable}" Value="False" />
+												</MultiDataTrigger.Conditions>
+												<Setter Property="Source" Value="/Resources/Icons/MealOrdered.png" />
+												<Setter Property="ToolTip" Value="Menü ist bestellt und kann nicht storniert werden" />
+											</MultiDataTrigger>
+										</Style.Triggers>
+									</Style>
+								</Image.Style>
+							</Image>
+							<Image Grid.Column="2"
+							       Width="16"
+							       Height="16"
+							       Margin="2,0"
+							       DockPanel.Dock="Right"
+							       Source="/Resources/Icons/Warning.png"
+							       ToolTip="Bestellung ist nicht bestätigt"
+							       ToolTipService.ShowOnDisabled="True">
+								<Image.Style>
+									<Style TargetType="{x:Type Image}">
+										<Setter Property="Visibility" Value="Collapsed" />
+										<Style.Triggers>
+											<MultiDataTrigger>
+												<MultiDataTrigger.Conditions>
+													<Condition Binding="{Binding IsMealOrdered}" Value="True" />
+													<Condition Binding="{Binding IsMealOrderApproved}" Value="False" />
+												</MultiDataTrigger.Conditions>
+												<Setter Property="Visibility" Value="Visible" />
+											</MultiDataTrigger>
+										</Style.Triggers>
+									</Style>
+								</Image.Style>
+							</Image>
+						</Grid>
+						<TextBlock DockPanel.Dock="Bottom"
+						           FontSize="14"
+						           TextTrimming="CharacterEllipsis"
+						           TextWrapping="Wrap"
+						           ToolTipService.ShowOnDisabled="True">
+							<TextBlock.Style>
+								<Style TargetType="{x:Type TextBlock}">
+									<Setter Property="Text" Value="{Binding MealDescription}" />
+									<Style.Triggers>
+										<DataTrigger Binding="{Binding MealDescription}"
+										             Value="">
+											<Setter Property="Text" Value="{Binding MealName}" />
+										</DataTrigger>
+										<DataTrigger Binding="{Binding Path=(behaviors:IsTextTrimmedBehavior.IsTextTrimmed), RelativeSource={RelativeSource Self}}"
+										             Value="True">
+											<Setter Property="ToolTip" Value="{Binding RelativeSource={x:Static RelativeSource.Self}, Path=Text}" />
+										</DataTrigger>
+									</Style.Triggers>
+								</Style>
+							</TextBlock.Style>
+							<b:Interaction.Behaviors>
+								<behaviors:IsTextTrimmedBehavior />
+							</b:Interaction.Behaviors>
+						</TextBlock>
+					</DockPanel>
+				</Button>
+			</Border>
+		</DataTemplate>
+
+		<DataTemplate x:Key="MenuDayTemplate"
+		              DataType="{x:Type viewModels:GourmetMenuDayViewModel}">
+			<StackPanel Margin="0,2"
+			            Orientation="Horizontal">
+				<Border Width="100"
+				        Background="{StaticResource DayBackgroundBrush}">
+					<DockPanel Margin="10">
+						<TextBlock DockPanel.Dock="Top"
+						           FontSize="26"
+						           Text="{behaviors:CultureAwareBinding Date,
+						                                                StringFormat='dd.MM'}" />
+						<TextBlock DockPanel.Dock="Bottom"
+						           FontSize="14"
+						           Text="{behaviors:CultureAwareBinding Date,
+						                                                StringFormat='dddd'}" />
+					</DockPanel>
+				</Border>
+				<ItemsControl ItemTemplate="{StaticResource MealTemplate}"
+				              ItemsSource="{Binding Meals}">
+					<ItemsControl.ItemsPanel>
+						<ItemsPanelTemplate>
+							<StackPanel Orientation="Horizontal" />
+						</ItemsPanelTemplate>
+					</ItemsControl.ItemsPanel>
+				</ItemsControl>
+				<Border Width="2"
+				        BorderBrush="{StaticResource DayBackgroundBrush}"
+				        BorderThickness="1" />
+			</StackPanel>
+		</DataTemplate>
+	</views:InitializableView.Resources>
+
+	<Grid x:Name="Root">
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto" />
+			<RowDefinition Height="Auto" />
+			<RowDefinition />
+			<RowDefinition Height="Auto" />
+		</Grid.RowDefinitions>
+		<Border Grid.Row="0"
+		        Background="{StaticResource ActionBarBackgroundBrush}">
+			<DockPanel VerticalAlignment="Stretch"
+			           LastChildFill="False">
+				<StackPanel Margin="2"
+				            DockPanel.Dock="Left"
+				            Orientation="Horizontal">
+					<ToggleButton x:Name="ShowBillToggleButton"
+					              Checked="ShowBillToggleButtonOnChecked"
+					              Style="{StaticResource {x:Static ToolBar.ToggleButtonStyleKey}}"
+					              ToolTip="Transaktionen anzeigen">
+						<ToggleButton.Content>
+							<Image Source="/Resources/Icons/Bill.png"
+							       Style="{StaticResource ActionBarIconStyle}" />
+						</ToggleButton.Content>
+						<ToggleButton.Triggers>
+							<EventTrigger RoutedEvent="ToggleButton.Checked">
+								<BeginStoryboard>
+									<Storyboard>
+										<DoubleAnimation AccelerationRatio="0.4"
+										                 AutoReverse="False"
+										                 Storyboard.TargetName="BillingViewContainer"
+										                 Storyboard.TargetProperty="Width"
+										                 To="500"
+										                 Duration="00:00:00.2" />
+									</Storyboard>
+								</BeginStoryboard>
+							</EventTrigger>
+							<EventTrigger RoutedEvent="ToggleButton.Unchecked">
+								<BeginStoryboard>
+									<Storyboard>
+										<DoubleAnimation AccelerationRatio="0.4"
+										                 AutoReverse="False"
+										                 Storyboard.TargetName="BillingViewContainer"
+										                 Storyboard.TargetProperty="Width"
+										                 To="0"
+										                 Duration="00:00:00.2" />
+									</Storyboard>
+								</BeginStoryboard>
+							</EventTrigger>
+						</ToggleButton.Triggers>
+					</ToggleButton>
+
+					<Separator Margin="5,2"
+					           Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
+
+					<Button Command="{Binding UpdateMenuCommand, Mode=OneTime}"
+					        Style="{StaticResource ActionBarMenuButtonStyle}"
+					        ToolTip="Lokale Daten aktualisieren">
+						<Image Source="/Resources/Icons/RefreshLocalData.png"
+						       Style="{StaticResource ActionBarIconStyle}" />
+					</Button>
+					<Button Margin="5,0"
+					        Command="{Binding ExecuteSelectedOrderCommand}"
+					        Style="{StaticResource ActionBarMenuButtonStyle}"
+					        ToolTip="Bestellung ausführen">
+						<Button.Triggers>
+							<EventTrigger RoutedEvent="Button.Click">
+								<BeginStoryboard>
+									<Storyboard>
+										<ThicknessAnimationUsingKeyFrames AccelerationRatio="0.4"
+										                                  Storyboard.TargetProperty="Margin">
+											<SplineThicknessKeyFrame KeyTime="00:00:00"
+											                         Value="5,0,0,0" />
+											<SplineThicknessKeyFrame KeyTime="00:00:01"
+											                         Value="400,0,0,0" />
+										</ThicknessAnimationUsingKeyFrames>
+										<DoubleAnimation AccelerationRatio="0.4"
+										                 AutoReverse="False"
+										                 Storyboard.TargetProperty="Opacity"
+										                 From="1"
+										                 To="0"
+										                 Duration="00:00:01" />
+										<ThicknessAnimationUsingKeyFrames BeginTime="00:00:02"
+										                                  DecelerationRatio="0.4"
+										                                  Storyboard.TargetProperty="Margin">
+											<SplineThicknessKeyFrame KeyTime="00:00:00"
+											                         Value="-40,0,0,0" />
+											<SplineThicknessKeyFrame KeyTime="00:00:00.500"
+											                         Value="5,0,0,0" />
+										</ThicknessAnimationUsingKeyFrames>
+										<DoubleAnimation AutoReverse="False"
+										                 BeginTime="00:00:02"
+										                 DecelerationRatio="0.4"
+										                 Storyboard.TargetProperty="Opacity"
+										                 From="0"
+										                 To="1"
+										                 Duration="00:00:00.500" />
+									</Storyboard>
+								</BeginStoryboard>
+							</EventTrigger>
+						</Button.Triggers>
+						<Image Source="/Resources/Icons/ExecuteOrder.png"
+						       Style="{StaticResource ActionBarIconStyle}" />
+					</Button>
+				</StackPanel>
+				<StackPanel Margin="2"
+				            DockPanel.Dock="Right"
+				            Orientation="Horizontal">
+					<ToggleButton x:Name="AboutButton"
+					              Margin="5,0"
+					              Style="{StaticResource {x:Static ToolBar.ToggleButtonStyleKey}}"
+					              ToolTip="Über">
+						<Image Source="/Resources/Icons/Information.png"
+						       Style="{StaticResource ActionBarIconStyle}" />
+					</ToggleButton>
+					<ToggleButton x:Name="SettingsButton"
+					              IsChecked="{Binding IsSettingsPopupOpened}"
+					              Style="{StaticResource {x:Static ToolBar.ToggleButtonStyleKey}}"
+					              ToolTip="Einstellungen">
+						<Image Source="/Resources/Icons/Settings.png"
+						       Style="{StaticResource ActionBarIconStyle}" />
+					</ToggleButton>
+				</StackPanel>
+			</DockPanel>
+		</Border>
+
+		<Popup Grid.Row="0"
+		       Width="300"
+		       AllowsTransparency="True"
+		       HorizontalOffset="20"
+		       IsOpen="{Binding IsChecked, ElementName=AboutButton}"
+		       PlacementTarget="{Binding ElementName=AboutButton}"
+		       PopupAnimation="Fade"
+		       StaysOpen="False"
+		       VerticalOffset="2">
+			<Grid>
+				<Border Margin="10,9,20,20"
+				        Background="White"
+				        BorderBrush="Black"
+				        BorderThickness="1">
+					<Border.Effect>
+						<DropShadowEffect BlurRadius="15" />
+					</Border.Effect>
+					<views:AboutView />
+				</Border>
+				<Polyline Margin="0,0,28,0"
+				          HorizontalAlignment="Right"
+				          Fill="White"
+				          Points="-10,10 0,0 10,10"
+				          Stroke="Black"
+				          StrokeThickness="1" />
+			</Grid>
+		</Popup>
+
+		<Popup Grid.Row="0"
+		       Width="320"
+		       AllowsTransparency="True"
+		       HorizontalOffset="20"
+		       IsOpen="{Binding IsSettingsPopupOpened}"
+		       PlacementTarget="{Binding ElementName=SettingsButton}"
+		       PopupAnimation="Fade"
+		       StaysOpen="False"
+		       VerticalOffset="2">
+			<Grid>
+				<Border Margin="10,9,20,20"
+				        Background="White"
+				        BorderBrush="Black"
+				        BorderThickness="1">
+					<Border.Effect>
+						<DropShadowEffect BlurRadius="15" />
+					</Border.Effect>
+					<views:SettingsView />
+				</Border>
+				<Polyline Margin="0,0,28,0"
+				          HorizontalAlignment="Right"
+				          Fill="White"
+				          Points="-10,10 0,0 10,10"
+				          Stroke="Black"
+				          StrokeThickness="1" />
+			</Grid>
+		</Popup>
+
+		<Border Grid.Row="1"
+		        MaxHeight="100"
+		        BorderBrush="Gray">
+			<Border.Style>
+				<Style TargetType="{x:Type Border}">
+					<Setter Property="BorderThickness" Value="0,1,0,0" />
+					<Style.Triggers>
+						<DataTrigger Binding="{Binding ActualHeight, ElementName=NotificationsView}"
+						             Value="0">
+							<Setter Property="BorderThickness" Value="0" />
+						</DataTrigger>
+					</Style.Triggers>
+				</Style>
+			</Border.Style>
+			<ScrollViewer HorizontalScrollBarVisibility="Disabled"
+			              VerticalScrollBarVisibility="Auto">
+				<views:NotificationsView x:Name="NotificationsView" />
+			</ScrollViewer>
+		</Border>
+
+		<Grid Grid.Row="2">
+			<Border BorderBrush="Gray"
+			        BorderThickness="0,1">
+				<Grid>
+					<ScrollViewer x:Name="MenuScrollViewer"
+					              HorizontalScrollBarVisibility="Auto"
+					              ScrollChanged="MenuScrollViewerOnScrollChanged"
+					              VerticalScrollBarVisibility="Auto">
+						<ItemsControl ItemTemplate="{StaticResource MenuDayTemplate}"
+						              ItemsSource="{Binding Menu.Days}" />
+					</ScrollViewer>
+					<Border Margin="0,0,25,0"
+					        HorizontalAlignment="Right"
+					        VerticalAlignment="Top"
+					        Background="Yellow"
+					        BorderBrush="Gray"
+					        BorderThickness="1,0,1,1"
+					        DockPanel.Dock="Top"
+					        Visibility="{Binding AreAdditionalMenusOnRightSide, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type views:MealOrderView}}, Converter={StaticResource BoolToVisibilityConverter}}">
+						<Button x:Name="ScrollMenuToRightButton"
+						        Padding="5,0"
+						        Cursor="Hand"
+						        Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}">
+							<Button.Triggers>
+								<EventTrigger RoutedEvent="Button.Click">
+									<BeginStoryboard>
+										<Storyboard>
+											<DoubleAnimation AutoReverse="False"
+											                 Storyboard.Target="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type views:MealOrderView}}}"
+											                 Storyboard.TargetProperty="HorizontalMenuScrollOffset"
+											                 From="{Binding HorizontalOffset, ElementName=MenuScrollViewer}"
+											                 To="{Binding ScrollableWidth, ElementName=MenuScrollViewer}"
+											                 Duration="00:00:00.200" />
+										</Storyboard>
+									</BeginStoryboard>
+								</EventTrigger>
+							</Button.Triggers>
+							<TextBlock FontSize="14"
+							           Text="Mehr Menüs &gt;" />
+						</Button>
+					</Border>
+				</Grid>
+			</Border>
+
+			<Grid Background="Transparent"
+			      Visibility="{Binding IsMenuUpdating, Converter={StaticResource BoolToVisibilityConverter}}">
+				<Border Style="{StaticResource BorderOverlayStyle}" />
+				<views:LoadingSpinner Width="70"
+				                      Height="70"
+				                      SpinnerThickness="8" />
+			</Grid>
+
+			<Border MouseLeftButtonDown="MenuBillViewOverlayOnMouseLeftButtonDown"
+			        Style="{StaticResource BorderOverlayStyle}"
+			        Visibility="{Binding IsChecked, ElementName=ShowBillToggleButton, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+			<Border x:Name="BillingViewContainer"
+			        Width="0"
+			        Margin="0,1"
+			        HorizontalAlignment="Left"
+			        Background="White"
+			        BorderBrush="Gray"
+			        BorderThickness="0,0,1,0">
+				<views:BillingView x:Name="BillingView"
+				                   Width="500"
+				                   Margin="10" />
+			</Border>
+		</Grid>
+
+		<Canvas Grid.Row="2"
+		        Visibility="{Binding ShowWelcomeMessage, Converter={StaticResource BoolToVisibilityConverter}}">
+			<TextBlock Canvas.Top="80"
+			           Canvas.Right="100"
+			           FontFamily="Comic Sans MS"
+			           FontSize="20"
+			           Text="Zur Verwendung zuerst Login-Daten angeben" />
+			<Path Canvas.Right="20"
+			      Stroke="Black"
+			      StrokeThickness="3">
+				<Path.Data>
+					<PathGeometry>
+						<PathGeometry.Figures>
+							<PathFigureCollection>
+								<PathFigure StartPoint="0,80">
+									<PathFigure.Segments>
+										<PathSegmentCollection>
+											<PolyBezierSegment Points="20,70 50,60 70,15" />
+										</PathSegmentCollection>
+									</PathFigure.Segments>
+								</PathFigure>
+								<PathFigure StartPoint="70,15">
+									<PathFigure.Segments>
+										<LineSegment Point="53,25" />
+									</PathFigure.Segments>
+								</PathFigure>
+								<PathFigure StartPoint="70,15">
+									<PathFigure.Segments>
+										<LineSegment Point="75,32" />
+									</PathFigure.Segments>
+								</PathFigure>
+							</PathFigureCollection>
+						</PathGeometry.Figures>
+					</PathGeometry>
+				</Path.Data>
+			</Path>
+		</Canvas>
+
+		<StatusBar Grid.Row="3">
+			<StatusBarItem x:Name="NameOfUserStatusBarItem">
+				<StatusBarItem.Style>
+					<Style TargetType="{x:Type StatusBarItem}">
+						<Style.Triggers>
+							<DataTrigger Binding="{Binding NameOfUser}"
+							             Value="{x:Null}">
+								<Setter Property="Visibility" Value="Collapsed" />
+							</DataTrigger>
+						</Style.Triggers>
+					</Style>
+				</StatusBarItem.Style>
+				<TextBlock Text="{Binding NameOfUser, StringFormat='{}Eingeloggt als: {0}'}" />
+			</StatusBarItem>
+			<Separator Visibility="{Binding Visibility, ElementName=NameOfUserStatusBarItem}" />
+			<StatusBarItem>
+				<StatusBarItem.Style>
+					<Style TargetType="{x:Type StatusBarItem}">
+						<Style.Triggers>
+							<DataTrigger Binding="{Binding LastMenuUpdate}"
+							             Value="{x:Static system:DateTime.MinValue}">
+								<Setter Property="Visibility" Value="Collapsed" />
+							</DataTrigger>
+						</Style.Triggers>
+					</Style>
+				</StatusBarItem.Style>
+				<TextBlock Text="{behaviors:CultureAwareBinding LastMenuUpdate, StringFormat='{}Letzte Aktualisierung: {0:g}'}" />
+			</StatusBarItem>
+		</StatusBar>
+	</Grid>
+</views:InitializableView>

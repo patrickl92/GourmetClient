@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "GourmetClient": {
+      "commandName": "Project"
+    },
+    "GourmetClient Updater": {
+      "commandName": "Project",
+      "commandLineArgs": "/update \"C:\\Temp\\GourmetClientUpdateTest\\CurrentVersion\""
+    }
+  }
+}

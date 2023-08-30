@@ -1,0 +1,227 @@
+﻿<views:InitializableView x:Class="GourmetClient.Views.BillingView"
+                         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                         xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+                         xmlns:behaviors="clr-namespace:GourmetClient.Behaviors"
+                         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                         xmlns:system="clr-namespace:System;assembly=System.Runtime"
+                         xmlns:viewModels="clr-namespace:GourmetClient.ViewModels"
+                         xmlns:views="clr-namespace:GourmetClient.Views"
+                         d:DataContext="{d:DesignInstance viewModels:BillingViewModel,
+                                                          IsDesignTimeCreatable=False}"
+                         d:DesignHeight="450"
+                         d:DesignWidth="500"
+                         mc:Ignorable="d">
+	<views:InitializableView.Resources>
+		<behaviors:BoolInvertConverter x:Key="BoolInvertConverter" />
+		<behaviors:BoolToVisibilityConverter x:Key="BoolToVisibilityHiddenConverter"
+		                                     FalseValue="Hidden" />
+
+		<Style x:Key="HeaderTextBlock"
+		       TargetType="{x:Type TextBlock}">
+			<Setter Property="FontSize" Value="20" />
+			<Setter Property="Margin" Value="0,40,0,10" />
+		</Style>
+
+		<Style x:Key="BillingPositionTextBlockColumnStyle"
+		       TargetType="{x:Type TextBlock}">
+			<Setter Property="FontSize" Value="14" />
+			<Setter Property="Margin" Value="2" />
+		</Style>
+
+		<Style x:Key="BillingPositionTextBlockNumericColumnStyle"
+		       BasedOn="{StaticResource BillingPositionTextBlockColumnStyle}"
+		       TargetType="{x:Type TextBlock}">
+			<Setter Property="HorizontalAlignment" Value="Right" />
+		</Style>
+
+		<Style x:Key="BillingPositionTextBlockNumericHeaderStyle"
+		       BasedOn="{StaticResource BillingPositionTextBlockNumericColumnStyle}"
+		       TargetType="{x:Type TextBlock}">
+			<Setter Property="FontWeight" Value="Bold" />
+		</Style>
+
+		<DataTemplate x:Key="GroupedBillingPositionsHeader">
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="30" />
+					<ColumnDefinition Width="240" />
+					<ColumnDefinition Width="80" />
+					<ColumnDefinition Width="80" />
+				</Grid.ColumnDefinitions>
+
+				<TextBlock Grid.Column="2"
+				           Style="{StaticResource BillingPositionTextBlockNumericHeaderStyle}"
+				           Text="Einz." />
+
+				<TextBlock Grid.Column="3"
+				           Style="{StaticResource BillingPositionTextBlockNumericHeaderStyle}"
+				           Text="Gesamt" />
+			</Grid>
+		</DataTemplate>
+
+		<DataTemplate x:Key="GroupedBillingPositionsFooter">
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="30" />
+					<ColumnDefinition Width="240" />
+					<ColumnDefinition Width="80" />
+					<ColumnDefinition Width="80" />
+				</Grid.ColumnDefinitions>
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="Auto" />
+				</Grid.RowDefinitions>
+
+				<Border Grid.Row="0"
+				        Grid.Column="0"
+				        Grid.ColumnSpan="4"
+				        Margin="0,2,0,0"
+				        BorderBrush="Black"
+				        BorderThickness="0,1,0,0" />
+
+				<TextBlock Grid.Row="1"
+				           Grid.Column="3"
+				           Style="{StaticResource BillingPositionTextBlockNumericHeaderStyle}"
+				           Text="{Binding StringFormat='{}{0:0.00} €'}" />
+			</Grid>
+		</DataTemplate>
+
+		<DataTemplate x:Key="GroupedBillingPositionTemplate"
+		              DataType="{x:Type viewModels:GroupedBillingPositionsViewModel}">
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="30" />
+					<ColumnDefinition Width="240" />
+					<ColumnDefinition Width="80" />
+					<ColumnDefinition Width="80" />
+				</Grid.ColumnDefinitions>
+
+				<TextBlock Grid.Column="0"
+				           Style="{StaticResource BillingPositionTextBlockNumericColumnStyle}"
+				           Text="{Binding Count, StringFormat='{}{0}x'}" />
+
+				<TextBlock Grid.Column="1"
+				           Text="{Binding PositionName}"
+				           TextTrimming="CharacterEllipsis">
+					<TextBlock.Style>
+						<Style BasedOn="{StaticResource BillingPositionTextBlockColumnStyle}"
+						       TargetType="{x:Type TextBlock}">
+							<Style.Triggers>
+								<DataTrigger Binding="{Binding Path=(behaviors:IsTextTrimmedBehavior.IsTextTrimmed), RelativeSource={RelativeSource Self}}"
+								             Value="True">
+									<Setter Property="ToolTip" Value="{Binding RelativeSource={x:Static RelativeSource.Self}, Path=Text}" />
+								</DataTrigger>
+							</Style.Triggers>
+						</Style>
+					</TextBlock.Style>
+					<b:Interaction.Behaviors>
+						<behaviors:IsTextTrimmedBehavior />
+					</b:Interaction.Behaviors>
+				</TextBlock>
+
+				<TextBlock Grid.Column="2"
+				           Style="{StaticResource BillingPositionTextBlockNumericColumnStyle}"
+				           Text="{Binding SingleCost, StringFormat='{}{0:0.00} €'}" />
+
+				<TextBlock Grid.Column="3"
+				           Style="{StaticResource BillingPositionTextBlockNumericColumnStyle}"
+				           Text="{Binding SumCost, StringFormat='{}{0:0.00} €'}" />
+			</Grid>
+		</DataTemplate>
+	</views:InitializableView.Resources>
+
+	<StackPanel Orientation="Vertical">
+		<StackPanel HorizontalAlignment="Center"
+		            Orientation="Vertical">
+			<StackPanel HorizontalAlignment="Center"
+			            Orientation="Horizontal">
+				<TextBlock Margin="5,5,10,5"
+				           VerticalAlignment="Center"
+				           FontSize="14"
+				           Text="Zeitraum:" />
+				<ComboBox Width="150"
+				          Padding="5"
+				          IsEnabled="{Binding IsUpdating, Converter={StaticResource BoolInvertConverter}}"
+				          ItemsSource="{Binding AvailableMonths}"
+				          SelectedItem="{Binding SelectedMonth}">
+					<ComboBox.ItemTemplate>
+						<DataTemplate>
+							<TextBlock FontSize="14">
+								<TextBlock.Style>
+									<Style TargetType="{x:Type TextBlock}">
+										<Setter Property="Text" Value="{Binding StringFormat='MMMMM yyyy'}" />
+										<Style.Triggers>
+											<DataTrigger Binding="{Binding}"
+											             Value="{x:Static system:DateTime.MinValue}">
+												<Setter Property="Text" Value="" />
+											</DataTrigger>
+										</Style.Triggers>
+									</Style>
+								</TextBlock.Style>
+							</TextBlock>
+						</DataTemplate>
+					</ComboBox.ItemTemplate>
+				</ComboBox>
+				<views:LoadingSpinner Margin="5"
+				                      Visibility="{Binding IsUpdating, Converter={StaticResource BoolToVisibilityHiddenConverter}}" />
+			</StackPanel>
+			<ProgressBar Width="149"
+			             Height="3"
+			             Margin="0,0,26,0"
+			             HorizontalAlignment="Right"
+			             Maximum="100"
+			             Minimum="0"
+			             Visibility="{Binding IsUpdating, Converter={StaticResource BoolToVisibilityHiddenConverter}}"
+			             Value="{Binding UpdateProgress, Mode=OneWay}" />
+		</StackPanel>
+
+
+		<TextBlock Style="{StaticResource HeaderTextBlock}"
+		           Text="Essen Kantine/Automaten" />
+
+		<ContentControl ContentTemplate="{StaticResource GroupedBillingPositionsHeader}" />
+
+		<ItemsControl ItemTemplate="{StaticResource GroupedBillingPositionTemplate}"
+		              ItemsSource="{Binding MealBillingPositions}" />
+
+		<ContentControl Content="{Binding SumCostMealBillingPositions}"
+		                ContentTemplate="{StaticResource GroupedBillingPositionsFooter}" />
+
+		<TextBlock Style="{StaticResource HeaderTextBlock}"
+		           Text="Getränke Automaten/Kaffeetabs" />
+
+		<ContentControl ContentTemplate="{StaticResource GroupedBillingPositionsHeader}" />
+
+		<ItemsControl ItemTemplate="{StaticResource GroupedBillingPositionTemplate}"
+		              ItemsSource="{Binding DrinkBillingPositions}" />
+
+		<ContentControl Content="{Binding SumCostDrinkBillingPositions}"
+		                ContentTemplate="{StaticResource GroupedBillingPositionsFooter}" />
+
+		<StackPanel Orientation="Vertical">
+			<StackPanel.Style>
+				<Style TargetType="{x:Type StackPanel}">
+					<Style.Triggers>
+						<DataTrigger Binding="{Binding UnknownBillingPositions.Count}"
+						             Value="0">
+							<Setter Property="Visibility" Value="Collapsed" />
+						</DataTrigger>
+					</Style.Triggers>
+				</Style>
+			</StackPanel.Style>
+
+			<TextBlock Style="{StaticResource HeaderTextBlock}"
+			           Text="Nicht kategorisiert" />
+
+			<ContentControl ContentTemplate="{StaticResource GroupedBillingPositionsHeader}" />
+
+			<ItemsControl ItemTemplate="{StaticResource GroupedBillingPositionTemplate}"
+			              ItemsSource="{Binding UnknownBillingPositions}" />
+
+			<ContentControl Content="{Binding SumCostUnknownBillingPositions}"
+			                ContentTemplate="{StaticResource GroupedBillingPositionsFooter}" />
+		</StackPanel>
+	</StackPanel>
+</views:InitializableView>

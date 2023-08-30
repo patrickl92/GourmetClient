@@ -1,0 +1,70 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Version>2.2.0</Version>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net7.0-windows</TargetFramework>
+		<UseWPF>true</UseWPF>
+		<ApplicationIcon>Resources\Icons\AppIcon.ico</ApplicationIcon>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Remove="Resources\Icons\Bill.png" />
+		<None Remove="Resources\Icons\chef.png" />
+		<None Remove="Resources\Icons\DismissNotification.png" />
+		<None Remove="Resources\Icons\download.png" />
+		<None Remove="Resources\Icons\Error.png" />
+		<None Remove="Resources\Icons\ExecuteOrder.png" />
+		<None Remove="Resources\Icons\Information.png" />
+		<None Remove="Resources\Icons\Information_small.png" />
+		<None Remove="Resources\Icons\MealMarkedForCancel.png" />
+		<None Remove="Resources\Icons\MealMarkedForOrder.png" />
+		<None Remove="Resources\Icons\MealNotAvailable.png" />
+		<None Remove="Resources\Icons\MealOrdered.png" />
+		<None Remove="Resources\Icons\ProgressChecked.png" />
+		<None Remove="Resources\Icons\ProgressError.png" />
+		<None Remove="Resources\Icons\RefreshLocalData.png" />
+		<None Remove="Resources\Icons\settings.png" />
+		<None Remove="Resources\Icons\ShowDetailedMessage.png" />
+		<None Remove="Resources\Icons\Update.png" />
+		<None Remove="Resources\Icons\upload.png" />
+		<None Remove="Resources\Icons\Warning.png" />
+		<None Remove="Resources\ReleaseNotes\v2.2.0\BillingView.png" />
+		<None Remove="Resources\ReleaseNotes\v2.2.0\UpdateAvailableNotification.png" />
+		<None Remove="Resources\UpdatePackageSignaturePublicKey.xml" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Resource Include="Resources\Icons\Bill.png" />
+		<Resource Include="Resources\Icons\chef.png" />
+		<Resource Include="Resources\Icons\DismissNotification.png" />
+		<Resource Include="Resources\Icons\Download.png" />
+		<Resource Include="Resources\Icons\Error.png" />
+		<Resource Include="Resources\Icons\ExecuteOrder.png" />
+		<Resource Include="Resources\Icons\Information.png" />
+		<Resource Include="Resources\Icons\Information_small.png" />
+		<Resource Include="Resources\Icons\MealMarkedForCancel.png" />
+		<Resource Include="Resources\Icons\MealMarkedForOrder.png" />
+		<Resource Include="Resources\Icons\MealNotAvailable.png" />
+		<Resource Include="Resources\Icons\MealOrdered.png" />
+		<Resource Include="Resources\Icons\ProgressChecked.png" />
+		<Resource Include="Resources\Icons\ProgressError.png" />
+		<Resource Include="Resources\Icons\RefreshLocalData.png" />
+		<Resource Include="Resources\Icons\Settings.png" />
+		<Resource Include="Resources\Icons\ShowDetailedMessage.png" />
+		<Resource Include="Resources\Icons\Update.png" />
+		<Resource Include="Resources\Icons\Upload.png" />
+		<Resource Include="Resources\Icons\Warning.png" />
+		<Resource Include="Resources\ReleaseNotes\v2.2.0\BillingView.png" />
+		<Resource Include="Resources\ReleaseNotes\v2.2.0\UpdateAvailableNotification.png" />
+		<EmbeddedResource Include="Resources\UpdatePackageSignaturePublicKey.xml" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="HtmlAgilityPack" Version="1.11.52" />
+		<PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.39" />
+		<PackageReference Include="Semver" Version="2.3.0" />
+	</ItemGroup>
+
+</Project>

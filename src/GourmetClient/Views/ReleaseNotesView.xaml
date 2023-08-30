@@ -1,0 +1,71 @@
+﻿<UserControl x:Class="GourmetClient.Views.ReleaseNotesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             d:DesignHeight="800"
+             d:DesignWidth="800"
+             mc:Ignorable="d">
+	<UserControl.Resources>
+		<Style x:Key="VersionExpander"
+		       TargetType="{x:Type Expander}">
+			<Setter Property="FontSize" Value="24" />
+			<Setter Property="FontWeight" Value="SemiBold" />
+			<Setter Property="Margin" Value="5" />
+			<Setter Property="Padding" Value="5,-10,5,5" />
+		</Style>
+		<Style x:Key="ReleaseNoteHeader"
+		       TargetType="{x:Type TextBlock}">
+			<Setter Property="FontSize" Value="20" />
+			<Setter Property="FontWeight" Value="Normal" />
+			<Setter Property="Margin" Value="0,25,0,5" />
+		</Style>
+		<Style x:Key="ReleaseNoteDescription"
+		       TargetType="{x:Type TextBlock}">
+			<Setter Property="FontSize" Value="14" />
+			<Setter Property="FontWeight" Value="Normal" />
+			<Setter Property="Margin" Value="0,5" />
+			<Setter Property="TextWrapping" Value="Wrap" />
+		</Style>
+		<Style x:Key="ReleaseNoteImage"
+		       TargetType="{x:Type Image}">
+			<Setter Property="Margin" Value="0,10" />
+			<Setter Property="HorizontalAlignment" Value="Center" />
+			<Setter Property="Stretch" Value="None" />
+		</Style>
+	</UserControl.Resources>
+	<ScrollViewer VerticalScrollBarVisibility="Auto">
+		<StackPanel Orientation="Vertical">
+			<Expander Header="Version 2.2.0"
+			          IsExpanded="True"
+			          Style="{StaticResource VersionExpander}">
+				<StackPanel Orientation="Vertical">
+					<TextBlock Style="{StaticResource ReleaseNoteHeader}"
+					           Text="Automatische Updates" />
+					<TextBlock Style="{StaticResource ReleaseNoteDescription}"
+					           Text="Der GourmetClient prüft automatisch auf neue Versionen und zeigt eine Info-Meldung an, wenn dies der Fall ist. Durch Klick auf den Download-Button (Pfeil nach unten) wird der GourmetClient automatisch aktualisiert." />
+					<Image Source="/Resources/ReleaseNotes/v2.2.0/UpdateAvailableNotification.png"
+					       Style="{StaticResource ReleaseNoteImage}" />
+					<TextBlock Style="{StaticResource ReleaseNoteDescription}"
+					           Text="Das Prüfen auf neue Versionen kann in den Einstellungen deaktiviert werden." />
+
+					<TextBlock Style="{StaticResource ReleaseNoteHeader}"
+					           Text="Versionsinformationen" />
+					<TextBlock Style="{StaticResource ReleaseNoteDescription}"
+					           Text="Beim ersten Start werden Informationen über die aktuelle Version angezeigt." />
+
+					<TextBlock Style="{StaticResource ReleaseNoteHeader}"
+					           Text="Anzeige konsumierter Speisen und Getränke" />
+					<TextBlock Style="{StaticResource ReleaseNoteDescription}"
+					           Text="Für die letzten Monate können die Abrechnungsdaten der konsumierten Speisen und Getränke angezeigt werden. Von Gourmet können die Daten bis maximal drei Monate zurück abgerufen werden, daher ist die Auswahl des Zeitraums nur beschränkt möglich." />
+					<TextBlock Style="{StaticResource ReleaseNoteDescription}"
+					           Text="Für das Anzeigen der kompletten Abrechnungsdaten müssen die Zugangsdaten für Ventopay in den Einstellungen hinterlegt werden." />
+					<Image Width="350"
+					       Source="/Resources/ReleaseNotes/v2.2.0/BillingView.png"
+					       Stretch="Uniform"
+					       Style="{StaticResource ReleaseNoteImage}" />
+				</StackPanel>
+			</Expander>
+		</StackPanel>
+	</ScrollViewer>
+</UserControl>
