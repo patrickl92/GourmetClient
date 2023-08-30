@@ -31,9 +31,18 @@ if (Test-Path -Path $updatePackagePath) {
     Remove-Item -Path $updatePackagePath
 }
 
+if (Test-Path -Path $hashFilePath) {
+    Remove-Item -Path $hashFilePath
+}
+
 
 ############## Build
 dotnet publish $gourmetSolutionFilePath -c Release -p:PublishProfile=PublishRelease -p:Version=$version
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Error: Build failed"
+    exit 1
+}
 
 
 ############## Create package
