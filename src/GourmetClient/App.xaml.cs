@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows;
 using GourmetClient.Update;
 
@@ -23,6 +24,8 @@ namespace GourmetClient
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            AddExceptionHandlers();
+
             if (e.Args.Length > 1 && e.Args[0] == "/update")
             {
                 StartUpdater(e.Args[1]);
@@ -34,6 +37,27 @@ namespace GourmetClient
                 
                 StartApplication(force, checkForPreRelease || InstanceProvider.UpdateService.CurrentVersion.IsPrerelease);
             }
+        }
+
+        private void AddExceptionHandlers()
+        {
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) => UnhandledExceptionOccurred(args.ExceptionObject as Exception);
+            DispatcherUnhandledException += (sender, args) => UnhandledExceptionOccurred(args.Exception);
+            TaskScheduler.UnobservedTaskException += (sender, args) => UnhandledExceptionOccurred(args.Exception);
+        }
+
+        private void UnhandledExceptionOccurred(Exception exception)
+        {
+            if (exception == null)
+            {
+                MessageBox.Show("Ein unerwarteter Fehler ist aufgetreten. Die Anwendung wird beendet", "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            else
+            {
+                ShowExceptionNotification("Ein unerwarteter Fehler ist aufgetreten. Die Anwendung wird beendet", exception);
+            }
+
+            Environment.Exit(1);
         }
 
         private void StartApplication(bool force, bool checkForPreRelease)
@@ -135,15 +159,21 @@ namespace GourmetClient
 
             if (updateException != null)
             {
-                new ExceptionNotificationDetailWindow
-                {
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                    Notification = new ExceptionNotification("Bei der Durchführung des Updates ist ein Fehler aufgetreten", updateException)
-                }.ShowDialog();
+                ShowExceptionNotification("Bei der Durchführung des Updates ist ein Fehler aufgetreten", updateException);
             }
 
             executeUpdateWindow.Close();
             Current.Shutdown();
+        }
+
+        private void ShowExceptionNotification(string message, Exception exception)
+        {
+            new ExceptionNotificationDetailWindow
+            {
+                Title = "Fehler",
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                Notification = new ExceptionNotification(message, exception)
+            }.ShowDialog();
         }
 
         private void ExecuteUpdateWindowOnClosing(object sender, CancelEventArgs e)
