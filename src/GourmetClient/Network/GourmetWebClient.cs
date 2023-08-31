@@ -387,7 +387,7 @@ namespace GourmetClient.Network
             var splitValue = nodeValue.Split('.');
             if (splitValue.Length != 2)
             {
-                throw new InvalidOperationException($"Expected two values after splitting the date node value '{nodeValue}' but there are {splitValue.Length} values");
+                throw new InvalidOperationException($"Expected two values after splitting the date node value '{nodeValue}' but there are {splitValue.Length} value(s)");
             }
 
             var dayString = splitValue[0];
