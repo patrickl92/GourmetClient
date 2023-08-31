@@ -411,13 +411,13 @@ namespace GourmetClient.Network
             var spaceSplitValue = attributeValue.Split(' ');
             if (spaceSplitValue.Length != 2)
             {
-                throw new InvalidOperationException($"Expected three values after splitting the date node value '{attributeValue}' but there are {spaceSplitValue.Length} values");
+                throw new InvalidOperationException($"Expected two values after splitting the date node value '{attributeValue}' but there are {spaceSplitValue.Length} value(s)");
             }
 
             var dateSplitValue = spaceSplitValue[0].Split('.');
             if (dateSplitValue.Length != 3)
             {
-                throw new InvalidOperationException($"Expected three values after splitting the date node value '{attributeValue}' but there are {spaceSplitValue.Length} values");
+                throw new InvalidOperationException($"Expected three values after splitting the date node value '{attributeValue}' but there are {spaceSplitValue.Length} value(s)");
             }
 
             var dayString = dateSplitValue[0];
