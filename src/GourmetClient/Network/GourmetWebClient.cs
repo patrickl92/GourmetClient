@@ -447,7 +447,7 @@ namespace GourmetClient.Network
             var dateSplitValue = dateString.Split('.');
             if (dateSplitValue.Length != 3)
             {
-                throw new InvalidOperationException($"Expected three values after splitting the date node value '{dateString}' but there are {dateSplitValue.Length} values");
+                throw new InvalidOperationException($"Expected three values after splitting the date node value '{dateString}' but there are {dateSplitValue.Length} value(s)");
             }
 
             var dayString = dateSplitValue[0];
