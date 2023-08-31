@@ -44,7 +44,7 @@ namespace GourmetClient.Network
                 {"password", password.ToPlainPassword()},
                 {"btnSubmit", "1"}
             };
-            
+
             using var response = await ExecutePostRequest(WebUrl, GetUrlParametersForPage(PageNameLogin), parameters);
             var httpContent = await GetResponseContent(response);
 
@@ -121,7 +121,7 @@ namespace GourmetClient.Network
                 { "ProductID", meal.ProductId },
                 { "IsMenu", "1" }
             };
-            
+
             using var response = await ExecuteGetRequest(WebUrl, GetUrlParametersForPage(PageNameAddMealToOrderedMenu, ActionNameAddMealToOrderedMenu, parameters));
         }
 
@@ -139,7 +139,7 @@ namespace GourmetClient.Network
                 { "id", orderedMeal.OrderId },
                 { "ismenu", "1" }
             };
-            
+
             using var response = await ExecuteGetRequest(WebUrl, GetUrlParametersForPage(PageNameOrderedMenu, ActionNameCancelMealOrder, parameters));
         }
 
@@ -163,11 +163,18 @@ namespace GourmetClient.Network
             using var response = await ExecutePostRequest(WebUrl, GetUrlParametersForPage(PageNameBilling), parameters);
             var httpContent = await GetResponseContent(response);
 
-            var billingPositions = ParseBillingPositionsFromBillingHtml(httpContent);
-
-            progress.Report(100);
-
-            return billingPositions;
+            try
+            {
+                return ParseBillingPositionsFromBillingHtml(httpContent);
+            }
+            catch (Exception exception)
+            {
+                throw new GourmetParseException("Error parsing the billing HTML", GetRequestUriString(response), httpContent, exception);
+            }
+            finally
+            {
+                progress.Report(100);
+            }
         }
 
         private Task<HttpResponseMessage> ExecuteGetRequestForPage(string pageName)
