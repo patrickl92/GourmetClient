@@ -44,6 +44,7 @@ namespace GourmetClient.Update
         {
             updateRelease = updateRelease ?? throw new ArgumentNullException(nameof(updateRelease));
 
+            var tempFolderPath = GetTempFolderPath();
             var packagePath = Path.Combine(GetTempFolderPath(), "GourmetClient.zip");
             var signedChecksumFilePath = Path.Combine(GetTempFolderPath(), "checksum.txt");
 
@@ -66,6 +67,11 @@ namespace GourmetClient.Update
 
             try
             {
+                if (!Directory.Exists(tempFolderPath))
+                {
+                    Directory.CreateDirectory(tempFolderPath!);
+                }
+
                 using var client = CreateHttpClient();
 
                 await using var packageFileStream = new FileStream(packagePath, FileMode.Create, FileAccess.Write, FileShare.None);
@@ -100,7 +106,8 @@ namespace GourmetClient.Update
 
         public async Task<string> ExtractUpdatePackage(string packagePath, CancellationToken cancellationToken)
         {
-            var targetLocation = Path.Combine(GetTempFolderPath(), "UpdatePackage");
+            var tempFolderPath = GetTempFolderPath();
+            var targetLocation = Path.Combine(tempFolderPath, "UpdatePackage");
 
             try
             {
@@ -109,6 +116,11 @@ namespace GourmetClient.Update
                     if (Directory.Exists(targetLocation))
                     {
                         Directory.Delete(targetLocation, true);
+                    }
+
+                    if (!Directory.Exists(tempFolderPath))
+                    {
+                        Directory.CreateDirectory(tempFolderPath);
                     }
 
                     ZipFile.ExtractToDirectory(packagePath, targetLocation);
