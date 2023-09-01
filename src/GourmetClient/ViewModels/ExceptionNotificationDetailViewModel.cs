@@ -38,10 +38,10 @@
             var stringBuilder = new StringBuilder();
 
             stringBuilder.AppendLine("GourmetClient notification details");
-            stringBuilder.Append("Timestamp: ").AppendLine(DateTime.Now.ToString("o"));
             stringBuilder.Append("GourmetClient Version: ").AppendLine(InstanceProvider.UpdateService.CurrentVersion.ToString());
             stringBuilder.Append("Notification Type: ").AppendLine(_notification.NotificationType.ToString());
             stringBuilder.Append("Notification Message: ").AppendLine(_notification.Message);
+            stringBuilder.Append("Notification Timestamp: ").AppendLine(_notification.Timestamp.ToString("o"));
 
             if (_notification.Exception is GourmetRequestException requestException)
             {
