@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.IO;
 using System.Net.Http;
 
 namespace GourmetClient.Network
@@ -348,6 +349,7 @@ namespace GourmetClient.Network
 
             var billingPositions = new List<BillingPosition>();
             var tableBodyNode = document.DocumentNode.GetSingleNode("//div[@class='abrechnung']//table[contains(@class, 'table-bordered')]//tbody");
+            var lastParsedDate = DateTime.MinValue;
 
             foreach (var rowNode in tableBodyNode.GetNodes(".//tr"))
             {
@@ -359,23 +361,42 @@ namespace GourmetClient.Network
 
                 var countNode = rowNode.GetSingleNode(".//td[@data-title='Stk.']");
                 var mealNameNode = rowNode.GetSingleNode(".//td[@data-title='Speise']");
-                var costNode = rowNode.GetSingleNode(".//td[@data-title='Abrechnung']");
+                var totalCostNode = rowNode.GetSingleNode(".//td[@data-title='Gesamt']");
+                var subsidyNode = rowNode.GetSingleNode(".//td[@data-title='Stützung']");
 
-                var date = GetDateFromBillingEntryDateString(dateNode.GetInnerText());
+                // If a bill contains multiple items, then only the first item row contains the date
+                // For the other items, the column is empty
+                var date = lastParsedDate;
+                var dateNodeText = dateNode.GetInnerText();
+                if (!string.IsNullOrWhiteSpace(dateNodeText))
+                {
+                    date = GetDateFromBillingEntryDateString(dateNodeText);
+                }
+
                 var mealName = mealNameNode.GetInnerText();
                 var countString = countNode.GetInnerText();
-                var costString = costNode.GetInnerText().Replace("€", string.Empty).Trim();
+                var totalCostString = totalCostNode.GetInnerText().Replace("€", string.Empty).Trim();
+                var subsidyString = subsidyNode.GetInnerText().Replace("€", string.Empty).Trim();
 
                 if (!int.TryParse(countString, out var count))
                 {
                     throw new InvalidOperationException($"Count '{countString}' has an invalid format");
                 }
 
-                if (!double.TryParse(costString, new CultureInfo("de-DE"), out var cost))
+                if (!double.TryParse(totalCostString, new CultureInfo("de-DE"), out var totalCost))
                 {
-                    throw new InvalidOperationException($"Cost '{costString}' has an invalid format");
+                    throw new InvalidOperationException($"Cost '{totalCostString}' has an invalid format");
                 }
 
+                // If a bill contains multiple items, then only the first item row contains a subsidy value
+                // For the other items, the column is empty
+                var subsidy = 0.0;
+                if (!string.IsNullOrWhiteSpace(subsidyString) && !double.TryParse(subsidyString, new CultureInfo("de-DE"), out subsidy))
+                {
+                    throw new InvalidOperationException($"Subsidy '{subsidyString}' has an invalid format");
+                }
+
+                var cost = totalCost - subsidy;
                 billingPositions.Add(new BillingPosition(date, false, BillingPositionType.Meal, mealName, count, cost));
             }
 
