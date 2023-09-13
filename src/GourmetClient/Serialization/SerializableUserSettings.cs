@@ -60,18 +60,28 @@
 
 		private static string Encrypt(SecureString secureString)
 		{
-			return EncryptionHelper.Encrypt(secureString?.ToPlainPassword() ?? string.Empty, GetEncryptionKey());
+            if (secureString == null)
+            {
+                return null;
+            }
+
+			return EncryptionHelper.Encrypt(secureString.ToPlainPassword(), GetEncryptionKey());
 		}
 
 		private static SecureString Decrypt(string encryptedText)
 		{
+            if (encryptedText == null)
+            {
+                return null;
+            }
+
 			try
 			{
 				return StringToSecureString(EncryptionHelper.Decrypt(encryptedText, GetEncryptionKey()));
 			}
 			catch (Exception)
 			{
-				return new SecureString();
+				return null;
 			}
 		}
 

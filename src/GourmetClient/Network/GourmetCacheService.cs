@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Security;
+using System.Text.Json;
 
 namespace GourmetClient.Network
 {
@@ -63,7 +64,13 @@ namespace GourmetClient.Network
             mealsToCancel = mealsToCancel ?? throw new ArgumentNullException(nameof(mealsToCancel));
 
             var userSettings = _settingsService.GetCurrentUserSettings();
-            await using var loginHandle = await _webClient.Login(userSettings.GourmetLoginUsername, userSettings.GourmetLoginPassword);
+
+            if (string.IsNullOrEmpty(userSettings.GourmetLoginUsername))
+            {
+                return;
+            }
+
+            await using var loginHandle = await _webClient.Login(userSettings.GourmetLoginUsername, userSettings.GourmetLoginPassword ?? new SecureString());
 
             if (!loginHandle.LoginSuccessful)
             {
@@ -181,7 +188,7 @@ namespace GourmetClient.Network
 
             try
             {
-                await using var loginHandle = await _webClient.Login(userSettings.GourmetLoginUsername, userSettings.GourmetLoginPassword);
+                await using var loginHandle = await _webClient.Login(userSettings.GourmetLoginUsername, userSettings.GourmetLoginPassword ?? new SecureString());
 
                 if (!loginHandle.LoginSuccessful)
                 {
