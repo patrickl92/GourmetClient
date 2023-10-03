@@ -36,8 +36,18 @@
 	</UserControl.Resources>
 	<ScrollViewer VerticalScrollBarVisibility="Auto">
 		<StackPanel Orientation="Vertical">
-			<Expander Header="Version 2.2.0"
+			<Expander Header="Version 2.2.1"
 			          IsExpanded="True"
+			          Style="{StaticResource VersionExpander}">
+				<StackPanel Orientation="Vertical">
+					<TextBlock Style="{StaticResource ReleaseNoteHeader}"
+					           Text="Fehlerbehebungen" />
+					<TextBlock Style="{StaticResource ReleaseNoteDescription}"
+					           Text="Bei Rechnungen mit mehreren Posten werden nicht immer alle Posten angezeigt." />
+				</StackPanel>
+			</Expander>
+			<Expander Header="Version 2.2.0"
+			          IsExpanded="False"
 			          Style="{StaticResource VersionExpander}">
 				<StackPanel Orientation="Vertical">
 					<TextBlock Style="{StaticResource ReleaseNoteHeader}"
