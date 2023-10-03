@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using System.IO;
 using System.Net.Http;
 
 namespace GourmetClient.Network
@@ -371,6 +370,7 @@ namespace GourmetClient.Network
                 if (!string.IsNullOrWhiteSpace(dateNodeText))
                 {
                     date = GetDateFromBillingEntryDateString(dateNodeText);
+                    lastParsedDate = date;
                 }
 
                 var mealName = mealNameNode.GetInnerText();
