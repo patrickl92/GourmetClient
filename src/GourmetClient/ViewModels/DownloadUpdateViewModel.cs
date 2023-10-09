@@ -1,6 +1,8 @@
 ﻿namespace GourmetClient.ViewModels
 {
     using System;
+    using System.Net;
+    using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Windows.Input;
@@ -122,7 +124,16 @@
             catch (GourmetUpdateException exception)
             {
                 DownloadStepState = UpdateStepState.Error;
-                _notificationService.Send(new ExceptionNotification("Beim Herunterladen der neuen Version ist ein Fehler aufgetreten", exception));
+
+                if (exception.InnerException is HttpRequestException { StatusCode: HttpStatusCode.ProxyAuthenticationRequired })
+                {
+                    _notificationService.Send(new ExceptionNotification("Die neue Version konnte nicht heruntergeladen werden. Ursache: Proxy-Authentifizierung erforderlich", exception));
+                }
+                else
+                {
+                    _notificationService.Send(new ExceptionNotification("Beim Herunterladen der neuen Version ist ein Fehler aufgetreten", exception));
+                }
+
                 return;
             }
             finally
