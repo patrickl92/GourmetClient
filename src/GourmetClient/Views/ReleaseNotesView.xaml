@@ -36,8 +36,22 @@
 	</UserControl.Resources>
 	<ScrollViewer VerticalScrollBarVisibility="Auto">
 		<StackPanel Orientation="Vertical">
-			<Expander Header="Version 2.2.1"
+			<Expander Header="Version 2.2.2"
 			          IsExpanded="True"
+			          Style="{StaticResource VersionExpander}">
+				<StackPanel Orientation="Vertical">
+					<TextBlock Style="{StaticResource ReleaseNoteHeader}"
+					           Text="Neuerungen" />
+					<TextBlock Style="{StaticResource ReleaseNoteDescription}"
+					           Text="Vereinfachte Fehlermeldung, wenn das Herunterladen einer neuen Version wegen des Proxys nicht funktioniert." />
+					<TextBlock Style="{StaticResource ReleaseNoteHeader}"
+					           Text="Fehlerbehebungen" />
+					<TextBlock Style="{StaticResource ReleaseNoteDescription}"
+					           Text="Beim Abfragen auf neue Versionen kann die Anzahl der zulässigen Anfragen überschritten werden." />
+				</StackPanel>
+			</Expander>
+			<Expander Header="Version 2.2.1"
+			          IsExpanded="False"
 			          Style="{StaticResource VersionExpander}">
 				<StackPanel Orientation="Vertical">
 					<TextBlock Style="{StaticResource ReleaseNoteHeader}"
