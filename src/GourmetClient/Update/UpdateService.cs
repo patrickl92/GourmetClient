@@ -1,19 +1,21 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using GourmetClient.Update.Response;
 using Semver;
 
 namespace GourmetClient.Update
 {
+    using Serialization;
     using System;
     using System.Diagnostics;
     using System.IO;
     using System.IO.Compression;
     using System.Reflection;
     using System.Security.Cryptography;
+    using System.Text.Json;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -21,9 +23,13 @@ namespace GourmetClient.Update
     {
         private const string ReleaseListUri = "https://api.github.com/repos/patrickl92/GourmetClient/releases";
 
+        private readonly string _releaseListQueryResultFilePath;
+
         public UpdateService()
         {
             CurrentVersion = SemVersion.Parse(Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion, SemVersionStyles.Strict);
+
+            _releaseListQueryResultFilePath = Path.Combine(App.LocalAppDataPath, "ReleaseListQueryResult.json");
         }
 
         public SemVersion CurrentVersion { get; }
@@ -32,12 +38,18 @@ namespace GourmetClient.Update
         {
             try
             {
-                return await GetLatestRelease(acceptPreReleases);
+                var latestRelease = await GetLatestRelease(acceptPreReleases);
+                if (latestRelease != null && latestRelease.Version.CompareSortOrderTo(CurrentVersion) > 0)
+                {
+                    // Version of latest release is newer than current version
+                    return latestRelease;
+                }
             }
             catch (GourmetUpdateException)
             {
-                return null;
             }
+
+            return null;
         }
 
         public async Task<string> DownloadUpdatePackage(ReleaseDescription updateRelease, IProgress<int> progress, CancellationToken cancellationToken)
@@ -275,34 +287,56 @@ namespace GourmetClient.Update
 
         private async Task<ReleaseDescription> GetLatestRelease(bool acceptPreReleases)
         {
-            using var client = CreateHttpClient();
-            ReleaseEntry[] releases;
-
-            try
-            {
-                releases = await client.GetFromJsonAsync<ReleaseEntry[]>(ReleaseListUri);
-            }
-            catch (Exception exception)
-            {
-                throw new GourmetUpdateException("Error while trying to receive the list of releases", exception);
-            }
-
-            var releaseDescriptions = ReleaseEntriesToDescriptions(releases);
+            IEnumerable<ReleaseDescription> releaseDescriptions = await GetAvailableReleases();
 
             if (!acceptPreReleases)
             {
                 releaseDescriptions = releaseDescriptions.Where(description => !description.Version.IsPrerelease);
             }
 
-            foreach (var releaseDescription in releaseDescriptions)
+            return releaseDescriptions.MaxBy(description => description.Version, SemVersion.SortOrderComparer);
+        }
+
+        private async Task<IReadOnlyList<ReleaseDescription>> GetAvailableReleases()
+        {
+            using var client = CreateHttpClient();
+            using var request = new HttpRequestMessage(HttpMethod.Get, ReleaseListUri);
+
+            IReadOnlyList<ReleaseDescription> releaseDescriptions = Array.Empty<ReleaseDescription>();
+
+            var cachedQueryResult = await GetCachedReleaseListQueryResult();
+            if (cachedQueryResult != null)
             {
-                if (releaseDescription.Version.CompareSortOrderTo(CurrentVersion) > 0)
-                {
-                    return releaseDescription;
-                }
+                request.Headers.IfNoneMatch.Add(new EntityTagHeaderValue(cachedQueryResult.ETagHeaderValue, cachedQueryResult.IsWeakETag));
+                releaseDescriptions = cachedQueryResult.Releases;
             }
 
-            return null;
+            try
+            {
+                var response = await client.SendAsync(request);
+                
+                if (response.StatusCode != HttpStatusCode.NotModified)
+                {
+                    response.EnsureSuccessStatusCode();
+
+                    var contentStream = await response.Content.ReadAsStreamAsync();
+                    var releases = await JsonSerializer.DeserializeAsync<ReleaseEntry[]>(contentStream);
+
+                    releaseDescriptions = ReleaseEntriesToDescriptions(releases);
+
+                    if (response.Headers.ETag != null)
+                    {
+                        var queryResult = new ReleaseListQueryResult(response.Headers.ETag.Tag, response.Headers.ETag.IsWeak, releaseDescriptions);
+                        await SaveReleaseListQueryResult(queryResult);
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                throw new GourmetUpdateException("Error while trying to receive the list of releases", exception);
+            }
+
+            return releaseDescriptions;
         }
 
         private HttpClient CreateHttpClient()
@@ -313,8 +347,51 @@ namespace GourmetClient.Update
             return client;
         }
 
-        private static IEnumerable<ReleaseDescription> ReleaseEntriesToDescriptions(IEnumerable<ReleaseEntry> entries)
+        private async Task<ReleaseListQueryResult> GetCachedReleaseListQueryResult()
         {
+            if (File.Exists(_releaseListQueryResultFilePath))
+            {
+                try
+                {
+                    await using var fileStream = new FileStream(_releaseListQueryResultFilePath, FileMode.Open, FileAccess.Read, FileShare.None);
+                    var serializedResult = await JsonSerializer.DeserializeAsync<SerializableReleaseListQueryResult>(fileStream);
+
+                    return serializedResult.ToReleaseListQueryResult();
+                }
+                catch (Exception exception) when (exception is IOException || exception is JsonException || exception is InvalidOperationException)
+                {
+                }
+            }
+
+            return null;
+        }
+
+        private async Task SaveReleaseListQueryResult(ReleaseListQueryResult queryResult)
+        {
+            queryResult = queryResult ?? throw new ArgumentNullException(nameof(queryResult));
+
+            var serializedQueryResult = new SerializableReleaseListQueryResult(queryResult);
+
+            try
+            {
+                var parentDirectory = Path.GetDirectoryName(_releaseListQueryResultFilePath);
+                if (parentDirectory != null && !Directory.Exists(parentDirectory))
+                {
+                    Directory.CreateDirectory(parentDirectory);
+                }
+
+                await using var fileStream = new FileStream(_releaseListQueryResultFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
+                await JsonSerializer.SerializeAsync(fileStream, serializedQueryResult, new JsonSerializerOptions { WriteIndented = true });
+            }
+            catch (IOException)
+            {
+            }
+        }
+
+        private static IReadOnlyList<ReleaseDescription> ReleaseEntriesToDescriptions(IEnumerable<ReleaseEntry> entries)
+        {
+            var releaseDescriptions = new List<ReleaseDescription>();
+
             foreach (var entry in entries.Where(entry => !entry.IsDraft))
             {
                 if (SemVersion.TryParse(entry.Name, SemVersionStyles.AllowLowerV, out var semVersion))
@@ -324,10 +401,12 @@ namespace GourmetClient.Update
 
                     if (updatePackageAsset != null && checksumPackageAsset != null)
                     {
-                        yield return new ReleaseDescription(semVersion, updatePackageAsset.DownloadUrl, updatePackageAsset.Size, checksumPackageAsset.DownloadUrl, checksumPackageAsset.Size);
+                        releaseDescriptions.Add(new ReleaseDescription(semVersion, updatePackageAsset.DownloadUrl, updatePackageAsset.Size, checksumPackageAsset.DownloadUrl, checksumPackageAsset.Size));
                     }
                 }
             }
+
+            return releaseDescriptions;
         }
 
         private async Task VerifyChecksum(string packagePath, string signedChecksumFilePath, CancellationToken cancellationToken)
