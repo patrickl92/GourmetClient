@@ -16,7 +16,7 @@ namespace GourmetClient.Network
 
     public class GourmetWebClient : WebClientBase
     {
-        private const string WebUrl = "https://bestellung.gourmetcatering.at/frontend4/default.aspx";
+        private const string WebUrl = "https://alaclick.gourmet.at/frontend4/default.aspx";
 
         private const string PageNameLogin = "Login";
 
