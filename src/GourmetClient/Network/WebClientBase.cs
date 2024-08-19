@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System;
 using System.Net;
 using System.Text;
+using System.Threading;
 
 namespace GourmetClient.Network
 {
@@ -11,20 +12,16 @@ namespace GourmetClient.Network
 
     public abstract class WebClientBase
     {
-        private readonly HttpClient _client;
-
         private readonly object _loginLogoutLockObject = new object();
+        private readonly SemaphoreSlim _clientCreationSemaphore = new SemaphoreSlim(1, 1);
+
+        private HttpClient _client;
 
         private Task<bool> _loginTask;
 
         private Task _logoutTask;
 
         private int _loginCounter;
-
-        public WebClientBase()
-        {
-            _client = new HttpClient();
-        }
 
         public async Task<LoginHandle> Login(string userName, SecureString password)
         {
@@ -100,10 +97,10 @@ namespace GourmetClient.Network
         {
             var requestUrl = AppendParametersToUrl(url, urlParameters);
             HttpResponseMessage response;
-            
+
             try
             {
-                response = await _client.GetAsync(requestUrl);
+                response = await ExecuteRequest(requestUrl, client => client.GetAsync(requestUrl));
             }
             catch (Exception exception)
             {
@@ -124,7 +121,7 @@ namespace GourmetClient.Network
 
             try
             {
-                response = await _client.PostAsync(requestUrl, content);
+                response = await ExecuteRequest(requestUrl, client => client.PostAsync(requestUrl, content));
             }
             catch (Exception exception)
             {
@@ -157,6 +154,83 @@ namespace GourmetClient.Network
             }
 
             return $"{requestMessage.Method} {requestMessage.RequestUri}";
+        }
+
+        private async Task<HttpResponseMessage> ExecuteRequest(string requestUrl, Func<HttpClient, Task<HttpResponseMessage>> requestFunc)
+        {
+            await _clientCreationSemaphore.WaitAsync();
+            HttpClient client;
+
+            try
+            {
+                if (_client == null)
+                {
+                    var result = await CreateHttpClient(requestUrl, requestFunc);
+                    _client = result.Client;
+
+                    return result.Response;
+                }
+
+                client = _client;
+            }
+            finally
+            {
+                _clientCreationSemaphore.Release();
+            }
+
+            return await requestFunc(client);
+        }
+
+        private static async Task<(HttpClient Client, HttpResponseMessage Response)> CreateHttpClient(string requestUrl, Func<HttpClient, Task<HttpResponseMessage>> requestFunc)
+        {
+            HttpClient client;
+            HttpResponseMessage response;
+
+            var requestUri = new Uri(requestUrl);
+            var proxyUri = WebRequest.DefaultWebProxy?.GetProxy(requestUri);
+
+            if (proxyUri == null || proxyUri.Authority == requestUri.Authority)
+            {
+                // No proxy required -> use default HttpClient
+                client = new HttpClient();
+                response = await requestFunc(client);
+                return (client, response);
+            }
+
+            // Try executing request with default proxy (no authentication)
+            var proxy = new WebProxy(proxyUri, true);
+            client = new HttpClient(new HttpClientHandler { Proxy = proxy });
+
+            try
+            {
+                response = await requestFunc(client);
+                return (client, response);
+            }
+            catch (HttpRequestException exception)
+            {
+                client.Dispose();
+
+                if (exception.StatusCode == HttpStatusCode.ProxyAuthenticationRequired)
+                {
+                    // Try executing request with default proxy and default credentials
+                    client = new HttpClient(new HttpClientHandler { UseDefaultCredentials = true });
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            try
+            {
+                response = await requestFunc(client);
+                return (client, response);
+            }
+            catch
+            {
+                client.Dispose();
+                throw;
+            }
         }
 
         private static string AppendParametersToUrl(string url, IReadOnlyDictionary<string, string> parameters)
