@@ -36,8 +36,17 @@
 	</UserControl.Resources>
 	<ScrollViewer VerticalScrollBarVisibility="Auto">
 		<StackPanel Orientation="Vertical">
-			<Expander Header="Version 2.2.3"
+			<Expander Header="Version 2.2.4"
 			          IsExpanded="True"
+			          Style="{StaticResource VersionExpander}">
+				<StackPanel Orientation="Vertical">
+					<TextBlock Style="{StaticResource ReleaseNoteHeader}"
+					           Text="Fehlerbehebungen" />
+					<TextBlock Style="{StaticResource ReleaseNoteDescription}"
+					           Text="Die Erkennung der Proxy-Einstellungen wurde überarbeitet." />
+				</StackPanel>
+			</Expander>
+			<Expander Header="Version 2.2.3"
 			          Style="{StaticResource VersionExpander}">
 				<StackPanel Orientation="Vertical">
 					<TextBlock Style="{StaticResource ReleaseNoteHeader}"
