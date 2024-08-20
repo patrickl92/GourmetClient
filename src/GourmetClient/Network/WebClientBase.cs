@@ -17,6 +17,8 @@ namespace GourmetClient.Network
         private readonly object _loginLogoutLockObject = new object();
         private readonly SemaphoreSlim _clientCreationSemaphore = new SemaphoreSlim(1, 1);
 
+        private readonly CookieContainer _cookieContainer = new CookieContainer();
+
         private HttpClient _client;
 
         private Task<bool> _loginTask;
@@ -234,22 +236,22 @@ namespace GourmetClient.Network
             }
         }
 
-        private static async Task<(HttpClient Client, HttpResponseMessage Response)> CreateHttpClient(string requestUrl, Func<HttpClient, Task<HttpResponseMessage>> requestFunc)
+        private async Task<(HttpClient Client, HttpResponseMessage Response)> CreateHttpClient(string requestUrl, Func<HttpClient, Task<HttpResponseMessage>> requestFunc)
         {
             HttpClient client;
             HttpResponseMessage response;
-            
+
             var proxy = GetProxy(requestUrl);
             if (proxy is null)
             {
-                // No proxy required -> use default HttpClient
-                client = new HttpClient();
+                // No proxy required
+                client = new HttpClient(new HttpClientHandler { UseProxy = false, CookieContainer = _cookieContainer });
                 response = await requestFunc(client);
                 return (client, response);
             }
 
             // Try executing request with default proxy (no authentication)
-            client = new HttpClient(new HttpClientHandler { Proxy = proxy });
+            client = new HttpClient(new HttpClientHandler { Proxy = proxy, CookieContainer = _cookieContainer });
 
             try
             {
@@ -264,12 +266,12 @@ namespace GourmetClient.Network
                 if (IsProxyAuthenticationRequiredException(proxy, exception))
                 {
                     // Try executing request with default proxy and default credentials
-                    client = new HttpClient(new HttpClientHandler { Proxy = proxy, UseDefaultCredentials = true });
+                    client = new HttpClient(new HttpClientHandler { Proxy = proxy, UseDefaultCredentials = true, CookieContainer = _cookieContainer });
                 }
                 else if (IsProxyConnectionErrorException(proxy, exception))
                 {
                     // Connection to proxy cannot be established. Try executing request without proxy
-                    client = new HttpClient(new HttpClientHandler { UseProxy = false });
+                    client = new HttpClient(new HttpClientHandler { UseProxy = false, CookieContainer = _cookieContainer });
                 }
 
                 if (client is null)
