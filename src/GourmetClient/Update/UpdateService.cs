@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using GourmetClient.Update.Response;
+using GourmetClient.Utils;
 using Semver;
 
 namespace GourmetClient.Update
@@ -21,6 +22,7 @@ namespace GourmetClient.Update
 
     public class UpdateService
     {
+        private const string ProxyTestUri = "https://api.github.com/";
         private const string ReleaseListUri = "https://api.github.com/repos/patrickl92/GourmetClient/releases";
 
         private readonly string _releaseListQueryResultFilePath;
@@ -84,7 +86,7 @@ namespace GourmetClient.Update
                     Directory.CreateDirectory(tempFolderPath!);
                 }
 
-                using var client = CreateHttpClient();
+                using var client = await CreateHttpClient();
 
                 await using var packageFileStream = new FileStream(packagePath, FileMode.Create, FileAccess.Write, FileShare.None);
                 await using var checksumFileStream = new FileStream(signedChecksumFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
@@ -299,7 +301,7 @@ namespace GourmetClient.Update
 
         private async Task<IReadOnlyList<ReleaseDescription>> GetAvailableReleases()
         {
-            using var client = CreateHttpClient();
+            using var client = await CreateHttpClient();
             using var request = new HttpRequestMessage(HttpMethod.Get, ReleaseListUri);
 
             IReadOnlyList<ReleaseDescription> releaseDescriptions = Array.Empty<ReleaseDescription>();
@@ -339,9 +341,10 @@ namespace GourmetClient.Update
             return releaseDescriptions;
         }
 
-        private HttpClient CreateHttpClient()
+        private async Task<HttpClient> CreateHttpClient()
         {
-            var client = new HttpClient();
+            var (client, _) = await HttpClientHelper.CreateHttpClient(ProxyTestUri, client => client.GetAsync(ProxyTestUri), new CookieContainer());
+
             client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("GourmetClient", CurrentVersion.ToString()));
 
             return client;
