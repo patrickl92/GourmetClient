@@ -2,7 +2,9 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using System;
+using System.IO;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
@@ -158,38 +160,70 @@ namespace GourmetClient.Network
 
         private async Task<HttpResponseMessage> ExecuteRequest(string requestUrl, Func<HttpClient, Task<HttpResponseMessage>> requestFunc)
         {
-            await _clientCreationSemaphore.WaitAsync();
-            HttpClient client;
+            var (client, response) = await GetClient();
+
+            if (response is not null)
+            {
+                // Request was executed while creating the HttpClient
+                return response;
+            }
 
             try
             {
-                if (_client == null)
-                {
-                    var result = await CreateHttpClient(requestUrl, requestFunc);
-                    _client = result.Client;
+                return await requestFunc(client);
+            }
+            catch (HttpRequestException exception)
+            {
+                var isNetworkError = exception.StatusCode is null && exception.InnerException is IOException;
 
-                    return result.Response;
+                if (isNetworkError || IsProxyRelatedException(requestUrl, exception))
+                {
+                    // A network error occurred, or the connection with the proxy no longer works
+                    // Try to recreate the HttpClient and execute the request again
+                    var (_, responseAfterReset) = await GetClient(true);
+
+                    if (responseAfterReset is not null)
+                    {
+                        return responseAfterReset;
+                    }
                 }
 
-                client = _client;
-            }
-            finally
-            {
-                _clientCreationSemaphore.Release();
+                throw;
             }
 
-            return await requestFunc(client);
+            async Task<(HttpClient Client, HttpResponseMessage Response)> GetClient(bool resetClient = false)
+            {
+                await _clientCreationSemaphore.WaitAsync();
+
+                try
+                {
+                    if (_client == null || resetClient)
+                    {
+                        _client?.Dispose();
+                        _client = null;
+
+                        var result = await CreateHttpClient(requestUrl, requestFunc);
+                        _client = result.Client;
+
+                        return (_client, result.Response);
+                    }
+
+                    return (_client, null);
+                }
+                finally
+                {
+                    _clientCreationSemaphore.Release();
+                }
+            }
         }
 
         private static async Task<(HttpClient Client, HttpResponseMessage Response)> CreateHttpClient(string requestUrl, Func<HttpClient, Task<HttpResponseMessage>> requestFunc)
         {
             HttpClient client;
             HttpResponseMessage response;
-
-            var requestUri = new Uri(requestUrl);
-            var proxyUri = WebRequest.DefaultWebProxy?.GetProxy(requestUri);
-
-            if (proxyUri == null || proxyUri.Authority == requestUri.Authority)
+            
+            var proxy = GetProxy(requestUrl);
+            if (proxy is null)
             {
                 // No proxy required -> use default HttpClient
                 client = new HttpClient();
@@ -198,7 +232,6 @@ namespace GourmetClient.Network
             }
 
             // Try executing request with default proxy (no authentication)
-            var proxy = new WebProxy(proxyUri, true);
             client = new HttpClient(new HttpClientHandler { Proxy = proxy });
 
             try
@@ -209,13 +242,20 @@ namespace GourmetClient.Network
             catch (HttpRequestException exception)
             {
                 client.Dispose();
+                client = null;
 
-                if (exception.StatusCode == HttpStatusCode.ProxyAuthenticationRequired)
+                if (IsProxyAuthenticationRequiredException(proxy, exception))
                 {
                     // Try executing request with default proxy and default credentials
-                    client = new HttpClient(new HttpClientHandler { UseDefaultCredentials = true });
+                    client = new HttpClient(new HttpClientHandler { Proxy = proxy, UseDefaultCredentials = true });
                 }
-                else
+                else if (IsProxyConnectionErrorException(proxy, exception))
+                {
+                    // Connection to proxy cannot be established. Try executing request without proxy
+                    client = new HttpClient(new HttpClientHandler { UseProxy = false });
+                }
+
+                if (client is null)
                 {
                     throw;
                 }
@@ -231,6 +271,44 @@ namespace GourmetClient.Network
                 client.Dispose();
                 throw;
             }
+        }
+
+        private static WebProxy GetProxy(string requestUrl)
+        {
+            var requestUri = new Uri(requestUrl);
+            var proxyUri = WebRequest.DefaultWebProxy?.GetProxy(requestUri);
+
+            if (proxyUri == null || proxyUri.Authority == requestUri.Authority)
+            {
+                // No proxy required
+                return null;
+            }
+
+            return new WebProxy(proxyUri, true);
+        }
+
+        private static bool IsProxyRelatedException(string requestUrl, HttpRequestException exception)
+        {
+            var proxy = GetProxy(requestUrl);
+            if (proxy is null)
+            {
+                // No proxy required for request url
+                return false;
+            }
+
+            return IsProxyAuthenticationRequiredException(proxy, exception) || IsProxyConnectionErrorException(proxy, exception);
+        }
+
+        private static bool IsProxyAuthenticationRequiredException(WebProxy proxy, HttpRequestException exception)
+        {
+            // Exception message is like "The proxy tunnel request to proxy '<proxyUri>' failed with status code '407'."
+            return exception.StatusCode is null && exception.Message.Contains($"'{proxy.Address!.AbsoluteUri}'") && exception.Message.Contains("'407'");
+        }
+
+        private static bool IsProxyConnectionErrorException(WebProxy proxy, HttpRequestException exception)
+        {
+            // Exception message is like "The remote host (<proxy uri>) is unknown"
+            return exception.StatusCode is null && exception.InnerException is SocketException && exception.Message.Contains(proxy.Address!.Authority);
         }
 
         private static string AppendParametersToUrl(string url, IReadOnlyDictionary<string, string> parameters)
