@@ -63,7 +63,24 @@ namespace GourmetClient.Network
                 loginTask = _loginTask;
             }
 
-            return await loginTask;
+            try
+            {
+                return await loginTask;
+            }
+            catch (Exception)
+            {
+                lock (_loginLogoutLockObject)
+                {
+                    _loginCounter--;
+
+                    if (_loginCounter == 0)
+                    {
+                        _loginTask = null;
+                    }
+                }
+
+                throw;
+            }
         }
 
         private ValueTask OnLoginHandleReturned()
