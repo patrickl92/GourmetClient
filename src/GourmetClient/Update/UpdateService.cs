@@ -343,11 +343,15 @@ namespace GourmetClient.Update
 
         private async Task<HttpClient> CreateHttpClient()
         {
-            var (client, _) = await HttpClientHelper.CreateHttpClient(ProxyTestUri, client => client.GetAsync(ProxyTestUri), new CookieContainer());
-
-            client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("GourmetClient", CurrentVersion.ToString()));
+            var (client, _) = await HttpClientHelper.CreateHttpClient(ProxyTestUri, ExecuteProxyTestRequest, new CookieContainer());
 
             return client;
+
+            Task<HttpResponseMessage> ExecuteProxyTestRequest(HttpClient clientToTest)
+            {
+                clientToTest.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("GourmetClient", CurrentVersion.ToString()));
+                return clientToTest.SendAsync(new HttpRequestMessage(HttpMethod.Head, ProxyTestUri));
+            }
         }
 
         private async Task<ReleaseListQueryResult> GetCachedReleaseListQueryResult()

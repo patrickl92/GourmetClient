@@ -8,7 +8,7 @@ namespace GourmetClient.Utils
 {
     internal static class HttpClientHelper
     {
-        public static async Task<(HttpClient Client, HttpResponseMessage Response)> CreateHttpClient(string requestUrl, Func<HttpClient, Task<HttpResponseMessage>> requestFunc, CookieContainer cookieContainer)
+        public static async Task<(HttpClient Client, HttpResponseMessage Response)> CreateHttpClient(string requestUrl, Func<HttpClient, Task<HttpResponseMessage>> proxyTestRequestFunc, CookieContainer cookieContainer)
         {
             HttpClient client;
             HttpResponseMessage response;
@@ -18,16 +18,16 @@ namespace GourmetClient.Utils
             {
                 // No proxy required
                 client = new HttpClient(new HttpClientHandler { UseProxy = false, CookieContainer = cookieContainer });
-                response = await requestFunc(client);
+                response = await proxyTestRequestFunc(client);
                 return (client, response);
             }
 
-            // Try executing request with default proxy (no authentication)
+            // Try executing request with proxy (no authentication)
             client = new HttpClient(new HttpClientHandler { Proxy = proxy, CookieContainer = cookieContainer });
 
             try
             {
-                response = await requestFunc(client);
+                response = await proxyTestRequestFunc(client);
                 return (client, response);
             }
             catch (HttpRequestException exception)
@@ -55,7 +55,7 @@ namespace GourmetClient.Utils
 
             try
             {
-                response = await requestFunc(client);
+                response = await proxyTestRequestFunc(client);
                 return (client, response);
             }
             catch
@@ -94,13 +94,13 @@ namespace GourmetClient.Utils
         public static bool IsProxyAuthenticationRequiredException(WebProxy proxy, HttpRequestException exception)
         {
             // Exception message is like "The proxy tunnel request to proxy '<proxyUri>' failed with status code '407'."
-            return exception.StatusCode is null && exception.Message.Contains($"'{proxy.Address!.AbsoluteUri}'") && exception.Message.Contains("'407'");
+            return exception.HttpRequestError == HttpRequestError.ProxyTunnelError && exception.Message.Contains($"'{proxy.Address!.AbsoluteUri}'") && exception.Message.Contains("'407'");
         }
 
         public static bool IsProxyConnectionErrorException(WebProxy proxy, HttpRequestException exception)
         {
             // Exception message is like "The remote host (<proxy uri>) is unknown"
-            return exception.StatusCode is null && exception.InnerException is SocketException && exception.Message.Contains(proxy.Address!.Authority);
+            return exception.HttpRequestError == HttpRequestError.NameResolutionError && exception.Message.Contains(proxy.Address!.Authority);
         }
     }
 }
