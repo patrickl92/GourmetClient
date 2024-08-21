@@ -37,8 +37,9 @@ namespace GourmetClient.Utils
 
                 if (IsProxyAuthenticationRequiredException(proxy, exception))
                 {
-                    // Try executing request with default proxy and default credentials
-                    client = new HttpClient(new HttpClientHandler { Proxy = proxy, UseDefaultCredentials = true, CookieContainer = cookieContainer });
+                    // Try executing request with proxy and default credentials
+                    proxy.Credentials = CredentialCache.DefaultCredentials;
+                    client = new HttpClient(new HttpClientHandler { Proxy = proxy, CookieContainer = cookieContainer });
                 }
                 else if (IsProxyConnectionErrorException(proxy, exception))
                 {
