@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<Version>2.2.3</Version>
 		<OutputType>WinExe</OutputType>
-		<TargetFramework>net7.0-windows</TargetFramework>
+		<TargetFramework>net8.0-windows7.0</TargetFramework>
 		<UseWPF>true</UseWPF>
 		<ApplicationIcon>Resources\Icons\AppIcon.ico</ApplicationIcon>
 		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
