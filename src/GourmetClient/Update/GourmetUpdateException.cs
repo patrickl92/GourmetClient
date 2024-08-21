@@ -1,9 +1,8 @@
 ﻿namespace GourmetClient.Update
 {
 	using System;
-	using System.Runtime.Serialization;
 
-	public class GourmetUpdateException : Exception
+    public class GourmetUpdateException : Exception
 	{
 		public GourmetUpdateException(string message)
 			: base(message)
@@ -14,11 +13,5 @@
 			: base(message, innerException)
         {
         }
-
-		protected GourmetUpdateException(SerializationInfo info, StreamingContext context)
-			: base(info, context)
-        {
-        }
-
     }
 }
