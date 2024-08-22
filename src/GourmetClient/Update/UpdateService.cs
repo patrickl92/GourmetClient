@@ -301,7 +301,6 @@ namespace GourmetClient.Update
 
         private async Task<IReadOnlyList<ReleaseDescription>> GetAvailableReleases()
         {
-            using var client = await CreateHttpClient();
             using var request = new HttpRequestMessage(HttpMethod.Get, ReleaseListUri);
 
             IReadOnlyList<ReleaseDescription> releaseDescriptions = Array.Empty<ReleaseDescription>();
@@ -315,6 +314,7 @@ namespace GourmetClient.Update
 
             try
             {
+                using var client = await CreateHttpClient();
                 var response = await client.SendAsync(request);
                 
                 if (response.StatusCode != HttpStatusCode.NotModified)
