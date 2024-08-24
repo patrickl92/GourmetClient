@@ -1,5 +1,4 @@
 ﻿using System.Net.Http;
-using System.Net.Sockets;
 using System.Net;
 using System;
 using System.Threading.Tasks;
@@ -8,18 +7,18 @@ namespace GourmetClient.Utils
 {
     internal static class HttpClientHelper
     {
-        public static async Task<(HttpClient Client, HttpResponseMessage Response)> CreateHttpClient(string requestUrl, Func<HttpClient, Task<HttpResponseMessage>> proxyTestRequestFunc, CookieContainer cookieContainer)
+        public static async Task<(HttpClient Client, T RequestResult)> CreateHttpClient<T>(string requestUrl, Func<HttpClient, Task<T>> proxyTestRequestFunc, CookieContainer cookieContainer)
         {
             HttpClient client;
-            HttpResponseMessage response;
+            T requestResult;
 
             var proxy = GetProxy(requestUrl);
             if (proxy is null)
             {
                 // No proxy required
                 client = new HttpClient(new HttpClientHandler { UseProxy = false, CookieContainer = cookieContainer });
-                response = await proxyTestRequestFunc(client);
-                return (client, response);
+                requestResult = await proxyTestRequestFunc(client);
+                return (client, requestResult);
             }
 
             // Try executing request with proxy (no authentication)
@@ -27,8 +26,8 @@ namespace GourmetClient.Utils
 
             try
             {
-                response = await proxyTestRequestFunc(client);
-                return (client, response);
+                requestResult = await proxyTestRequestFunc(client);
+                return (client, requestResult);
             }
             catch (HttpRequestException exception)
             {
@@ -55,8 +54,8 @@ namespace GourmetClient.Utils
 
             try
             {
-                response = await proxyTestRequestFunc(client);
-                return (client, response);
+                requestResult = await proxyTestRequestFunc(client);
+                return (client, requestResult);
             }
             catch
             {

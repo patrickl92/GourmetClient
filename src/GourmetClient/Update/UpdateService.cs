@@ -22,7 +22,6 @@ namespace GourmetClient.Update
 
     public class UpdateService
     {
-        private const string ProxyTestUri = "https://api.github.com/";
         private const string ReleaseListUri = "https://api.github.com/repos/patrickl92/GourmetClient/releases";
 
         private readonly string _releaseListQueryResultFilePath;
@@ -85,21 +84,22 @@ namespace GourmetClient.Update
                 {
                     Directory.CreateDirectory(tempFolderPath!);
                 }
-
-                using var client = await CreateHttpClient();
-
+                
                 await using var packageFileStream = new FileStream(packagePath, FileMode.Create, FileAccess.Write, FileShare.None);
                 await using var checksumFileStream = new FileStream(signedChecksumFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
 
                 var totalBytesCount = updateRelease.UpdatePackageSize + updateRelease.ChecksumSize;
                 var totalReadBytes = 0L;
 
-                var packageSourceStream = await client.GetStreamAsync(updateRelease.UpdatePackageDownloadUrl, cancellationToken);
-                await DownloadFile(packageSourceStream, packageFileStream, totalBytesCount, totalReadBytes, progress, cancellationToken);
-                totalReadBytes += updateRelease.UpdatePackageSize;
+                var (client, packageSourceStream) = await CreateHttpClient(updateRelease.UpdatePackageDownloadUrl, client => client.GetStreamAsync(updateRelease.UpdatePackageDownloadUrl, cancellationToken));
+                using(client)
+                {
+                    await DownloadFile(packageSourceStream, packageFileStream, totalBytesCount, totalReadBytes, progress, cancellationToken);
+                    totalReadBytes += updateRelease.UpdatePackageSize;
 
-                var checksumSourceStream = await client.GetStreamAsync(updateRelease.ChecksumDownloadUrl, cancellationToken);
-                await DownloadFile(checksumSourceStream, checksumFileStream, totalBytesCount, totalReadBytes, progress, cancellationToken);
+                    var checksumSourceStream = await client.GetStreamAsync(updateRelease.ChecksumDownloadUrl, cancellationToken);
+                    await DownloadFile(checksumSourceStream, checksumFileStream, totalBytesCount, totalReadBytes, progress, cancellationToken);
+                }
             }
             catch (TaskCanceledException exception)
             {
@@ -314,8 +314,10 @@ namespace GourmetClient.Update
 
             try
             {
-                using var client = await CreateHttpClient();
-                var response = await client.SendAsync(request);
+                var (client, response) = await CreateHttpClient(request.RequestUri!.AbsoluteUri, client => client.SendAsync(request));
+                
+                // Not needed anymore
+                client.Dispose();
                 
                 if (response.StatusCode != HttpStatusCode.NotModified)
                 {
@@ -341,16 +343,14 @@ namespace GourmetClient.Update
             return releaseDescriptions;
         }
 
-        private async Task<HttpClient> CreateHttpClient()
+        private Task<(HttpClient Client, T RequestResult)> CreateHttpClient<T>(string requestUrl, Func<HttpClient, Task<T>> proxyTestRequestFunc)
         {
-            var (client, _) = await HttpClientHelper.CreateHttpClient(ProxyTestUri, ExecuteProxyTestRequest, new CookieContainer());
+            return HttpClientHelper.CreateHttpClient(requestUrl, ExecuteProxyTestRequest, new CookieContainer());
 
-            return client;
-
-            Task<HttpResponseMessage> ExecuteProxyTestRequest(HttpClient clientToTest)
+            Task<T> ExecuteProxyTestRequest(HttpClient clientToTest)
             {
                 clientToTest.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("GourmetClient", CurrentVersion.ToString()));
-                return clientToTest.SendAsync(new HttpRequestMessage(HttpMethod.Head, ProxyTestUri));
+                return proxyTestRequestFunc(clientToTest);
             }
         }
 

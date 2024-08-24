@@ -224,7 +224,7 @@ namespace GourmetClient.Network
                         var result = await HttpClientHelper.CreateHttpClient(requestUrl, requestFunc, _cookieContainer);
                         _client = result.Client;
 
-                        return (_client, result.Response);
+                        return (_client, result.RequestResult);
                     }
 
                     return (_client, null);
