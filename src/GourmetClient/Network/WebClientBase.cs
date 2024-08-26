@@ -179,17 +179,17 @@ namespace GourmetClient.Network
 
         private async Task<HttpResponseMessage> ExecuteRequest(string requestUrl, Func<HttpClient, Task<HttpResponseMessage>> requestFunc)
         {
-            var (client, response) = await GetClient();
+            var clientResult = await GetOrCreateClient();
 
-            if (response is not null)
+            if (clientResult.ResponseResult is not null)
             {
                 // Request was executed while creating the HttpClient
-                return response;
+                return clientResult.ResponseResult;
             }
 
             try
             {
-                return await requestFunc(client);
+                return await requestFunc(clientResult.Client);
             }
             catch (HttpRequestException exception)
             {
@@ -199,18 +199,19 @@ namespace GourmetClient.Network
                 {
                     // A network error occurred, or the connection with the proxy no longer works
                     // Try to recreate the HttpClient and execute the request again
-                    var (_, responseAfterReset) = await GetClient(true);
+                    clientResult = await GetOrCreateClient(true);
 
-                    if (responseAfterReset is not null)
+                    if (clientResult.ResponseResult is not null)
                     {
-                        return responseAfterReset;
+                        // Client was recreated successfully
+                        return clientResult.ResponseResult;
                     }
                 }
 
                 throw;
             }
 
-            async Task<(HttpClient Client, HttpResponseMessage Response)> GetClient(bool resetClient = false)
+            async Task<HttpClientResult<HttpResponseMessage>> GetOrCreateClient(bool resetClient = false)
             {
                 await _clientCreationSemaphore.WaitAsync();
 
@@ -224,10 +225,10 @@ namespace GourmetClient.Network
                         var result = await HttpClientHelper.CreateHttpClient(requestUrl, requestFunc, _cookieContainer);
                         _client = result.Client;
 
-                        return (_client, result.RequestResult);
+                        return result;
                     }
 
-                    return (_client, null);
+                    return new HttpClientResult<HttpResponseMessage>(_client, null);
                 }
                 finally
                 {

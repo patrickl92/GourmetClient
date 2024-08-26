@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 
 namespace GourmetClient.Utils
 {
-    internal static class HttpClientHelper
+    public static class HttpClientHelper
     {
-        public static async Task<(HttpClient Client, T RequestResult)> CreateHttpClient<T>(string requestUrl, Func<HttpClient, Task<T>> proxyTestRequestFunc, CookieContainer cookieContainer)
+        public static async Task<HttpClientResult<T>> CreateHttpClient<T>(string requestUrl, Func<HttpClient, Task<T>> proxyTestRequestFunc, CookieContainer cookieContainer)
         {
             HttpClient client;
             T requestResult;
@@ -18,7 +18,7 @@ namespace GourmetClient.Utils
                 // No proxy required
                 client = new HttpClient(new HttpClientHandler { UseProxy = false, CookieContainer = cookieContainer });
                 requestResult = await proxyTestRequestFunc(client);
-                return (client, requestResult);
+                return new HttpClientResult<T>(client, requestResult);
             }
 
             // Try executing request with proxy (no authentication)
@@ -27,7 +27,7 @@ namespace GourmetClient.Utils
             try
             {
                 requestResult = await proxyTestRequestFunc(client);
-                return (client, requestResult);
+                return new HttpClientResult<T>(client, requestResult);
             }
             catch (HttpRequestException exception)
             {
@@ -55,7 +55,7 @@ namespace GourmetClient.Utils
             try
             {
                 requestResult = await proxyTestRequestFunc(client);
-                return (client, requestResult);
+                return new HttpClientResult<T>(client, requestResult);
             }
             catch
             {

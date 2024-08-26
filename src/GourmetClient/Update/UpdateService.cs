@@ -84,22 +84,22 @@ namespace GourmetClient.Update
                 {
                     Directory.CreateDirectory(tempFolderPath!);
                 }
-                
+
                 await using var packageFileStream = new FileStream(packagePath, FileMode.Create, FileAccess.Write, FileShare.None);
                 await using var checksumFileStream = new FileStream(signedChecksumFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
 
                 var totalBytesCount = updateRelease.UpdatePackageSize + updateRelease.ChecksumSize;
                 var totalReadBytes = 0L;
 
-                var (client, packageSourceStream) = await CreateHttpClient(updateRelease.UpdatePackageDownloadUrl, client => client.GetStreamAsync(updateRelease.UpdatePackageDownloadUrl, cancellationToken));
-                using(client)
-                {
-                    await DownloadFile(packageSourceStream, packageFileStream, totalBytesCount, totalReadBytes, progress, cancellationToken);
-                    totalReadBytes += updateRelease.UpdatePackageSize;
+                var clientResult = await CreateHttpClient(updateRelease.UpdatePackageDownloadUrl, client => client.GetStreamAsync(updateRelease.UpdatePackageDownloadUrl, cancellationToken));
+                using var client = clientResult.Client;
+                
+                await using var packageSourceStream = clientResult.ResponseResult;
+                await DownloadFile(packageSourceStream, packageFileStream, totalBytesCount, totalReadBytes, progress, cancellationToken);
+                totalReadBytes += updateRelease.UpdatePackageSize;
 
-                    var checksumSourceStream = await client.GetStreamAsync(updateRelease.ChecksumDownloadUrl, cancellationToken);
-                    await DownloadFile(checksumSourceStream, checksumFileStream, totalBytesCount, totalReadBytes, progress, cancellationToken);
-                }
+                await using var checksumSourceStream = await client.GetStreamAsync(updateRelease.ChecksumDownloadUrl, cancellationToken);
+                await DownloadFile(checksumSourceStream, checksumFileStream, totalBytesCount, totalReadBytes, progress, cancellationToken);
             }
             catch (TaskCanceledException exception)
             {
@@ -314,11 +314,13 @@ namespace GourmetClient.Update
 
             try
             {
-                var (client, response) = await CreateHttpClient(request.RequestUri!.AbsoluteUri, client => client.SendAsync(request));
-                
+                var clientResult = await CreateHttpClient(request.RequestUri!.AbsoluteUri, client => client.SendAsync(request));
+
                 // Not needed anymore
-                client.Dispose();
+                clientResult.Client.Dispose();
                 
+                using var response = clientResult.ResponseResult;
+
                 if (response.StatusCode != HttpStatusCode.NotModified)
                 {
                     response.EnsureSuccessStatusCode();
@@ -343,7 +345,7 @@ namespace GourmetClient.Update
             return releaseDescriptions;
         }
 
-        private Task<(HttpClient Client, T RequestResult)> CreateHttpClient<T>(string requestUrl, Func<HttpClient, Task<T>> proxyTestRequestFunc)
+        private Task<HttpClientResult<T>> CreateHttpClient<T>(string requestUrl, Func<HttpClient, Task<T>> proxyTestRequestFunc)
         {
             return HttpClientHelper.CreateHttpClient(requestUrl, ExecuteProxyTestRequest, new CookieContainer());
 
