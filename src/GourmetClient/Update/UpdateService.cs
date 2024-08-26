@@ -347,10 +347,11 @@ namespace GourmetClient.Update
         {
             return HttpClientHelper.CreateHttpClient(requestUrl, ExecuteProxyTestRequest, new CookieContainer());
 
-            Task<T> ExecuteProxyTestRequest(HttpClient clientToTest)
+            Task<T> ExecuteProxyTestRequest(HttpClient client)
             {
-                clientToTest.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("GourmetClient", CurrentVersion.ToString()));
-                return proxyTestRequestFunc(clientToTest);
+                // Github requires an user agent
+                client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("GourmetClient", CurrentVersion.ToString()));
+                return proxyTestRequestFunc(client);
             }
         }
 
