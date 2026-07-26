@@ -155,12 +155,12 @@ public abstract class WebClientBase
         return response;
     }
 
-    protected async Task<HttpResponseMessage> ExecuteJsonPostRequest(string url, object parameters)
+    protected async Task<HttpResponseMessage> ExecuteJsonPostRequest(string url, object payload)
     {
         HttpResponseMessage response;
         try
         {
-            response = await ExecuteRequest(url, client => client.PostAsJsonAsync(url, parameters));
+            response = await ExecuteRequest(url, client => client.PostAsJsonAsync(url, payload));
         }
         catch (HttpRequestException exception)
         {
