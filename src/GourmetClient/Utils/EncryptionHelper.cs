@@ -8,9 +8,9 @@ namespace GourmetClient.Utils;
 
 public static class EncryptionHelper
 {
-    // This constant is used to determine the keysize of the encryption algorithm in bits.
+    // This constant is used to determine the key size of the encryption algorithm in bits.
     // We divide this by 8 within the code below to get the equivalent number of bytes.
-    private const int Keysize = 128;
+    private const int KeySize = 128;
 
     // This constant determines the number of iterations for the password bytes generation function.
     private const int DerivationIterations = 1000;
@@ -28,8 +28,7 @@ public static class EncryptionHelper
         symmetricKey.Mode = CipherMode.CBC;
         symmetricKey.Padding = PaddingMode.PKCS7;
 
-        using var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, DerivationIterations, HashAlgorithmName.SHA256);
-        byte[] keyBytes = password.GetBytes(Keysize / 8);
+        byte[] keyBytes = Rfc2898DeriveBytes.Pbkdf2(passPhrase, saltStringBytes, DerivationIterations, HashAlgorithmName.SHA256, KeySize / 8);
 
         using ICryptoTransform encryptor = symmetricKey.CreateEncryptor(keyBytes, ivStringBytes);
         using var memoryStream = new MemoryStream();
@@ -52,21 +51,21 @@ public static class EncryptionHelper
         // [32 bytes of Salt] + [32 bytes of IV] + [n bytes of CipherText]
         byte[] cipherTextBytesWithSaltAndIv = Convert.FromBase64String(cipherText);
 
-        // Get the saltbytes by extracting the first 32 bytes from the supplied cipherText bytes.
+        // Get the salt bytes by extracting the first 32 bytes from the supplied cipherText bytes.
         byte[] saltStringBytes = cipherTextBytesWithSaltAndIv
-            .Take(Keysize / 8)
+            .Take(KeySize / 8)
             .ToArray();
 
         // Get the IV bytes by extracting the next 32 bytes from the supplied cipherText bytes.
         byte[] ivStringBytes = cipherTextBytesWithSaltAndIv
-            .Skip(Keysize / 8)
-            .Take(Keysize / 8)
+            .Skip(KeySize / 8)
+            .Take(KeySize / 8)
             .ToArray();
 
         // Get the actual cipher text bytes by removing the first 64 bytes from the cipherText string.
         byte[] cipherTextBytes = cipherTextBytesWithSaltAndIv
-            .Skip((Keysize / 8) * 2)
-            .Take(cipherTextBytesWithSaltAndIv.Length - ((Keysize / 8) * 2))
+            .Skip((KeySize / 8) * 2)
+            .Take(cipherTextBytesWithSaltAndIv.Length - ((KeySize / 8) * 2))
             .ToArray();
 
         using Aes symmetricKey = Aes.Create();
@@ -74,8 +73,7 @@ public static class EncryptionHelper
         symmetricKey.Mode = CipherMode.CBC;
         symmetricKey.Padding = PaddingMode.PKCS7;
 
-        using var password = new Rfc2898DeriveBytes(passPhrase, saltStringBytes, DerivationIterations, HashAlgorithmName.SHA256);
-        byte[] keyBytes = password.GetBytes(Keysize / 8);
+        byte[] keyBytes = Rfc2898DeriveBytes.Pbkdf2(passPhrase, saltStringBytes, DerivationIterations, HashAlgorithmName.SHA256, KeySize / 8);
 
         using ICryptoTransform decryptor = symmetricKey.CreateDecryptor(keyBytes, ivStringBytes);
         using var memoryStream = new MemoryStream(cipherTextBytes);
