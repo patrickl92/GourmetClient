@@ -34,9 +34,15 @@
 	<ScrollViewer VerticalScrollBarVisibility="Auto">
 		<StackPanel Orientation="Vertical">
 			<Expander
-				Header="Version 2.3.0"
+				Header="Version 2.4.0"
 				IsExpanded="True"
 				Style="{StaticResource VersionExpander}">
+				<StackPanel Orientation="Vertical">
+					<TextBlock Style="{StaticResource ReleaseNoteHeader}" Text="Anpassung an Änderungen der Gourmet-Webseite" />
+					<TextBlock Style="{StaticResource ReleaseNoteDescription}" Text="Die Verarbeitung der Daten wurde an die das neue Layout der Gourmet-Webseite angepasst." />
+				</StackPanel>
+			</Expander>
+			<Expander Header="Version 2.3.0" Style="{StaticResource VersionExpander}">
 				<StackPanel Orientation="Vertical">
 					<TextBlock Style="{StaticResource ReleaseNoteHeader}" Text="Anpassung an Änderungen der Gourmet-Webseite" />
 					<TextBlock Style="{StaticResource ReleaseNoteDescription}" Text="Die Verarbeitung der Daten wurde an die das neue Layout der Gourmet-Webseite angepasst." />
