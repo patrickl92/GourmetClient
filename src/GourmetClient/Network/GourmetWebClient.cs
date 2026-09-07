@@ -27,9 +27,6 @@ public partial class GourmetWebClient : WebClientBase
 
     private const string ApiGetBillings = "umbraco/api/AlaMyBillingApi/GetMyBillings";
     private const string ApiAddMenuToOrderedMenu = "umbraco/api/AlaCartApi/AddToMenuesCart";
-    
-    [GeneratedRegex(@"<span class=""loginname"">")]
-    private static partial Regex LoginSuccessfulRegex();
 
     [GeneratedRegex(@"MENÜ\s+([I]{1,3})")]
     private static partial Regex MenuNumberRegex();
@@ -46,8 +43,11 @@ public partial class GourmetWebClient : WebClientBase
         using HttpResponseMessage loginResponse = await ExecuteFormPostRequestForPage(ControllerActionLogin, parameters);
         string loginContent = await ReadResponseContent(loginResponse);
 
+        var document = new HtmlDocument();
+        document.LoadHtml(loginContent);
+
         // Login is successful if login name is found in content.
-        return LoginSuccessfulRegex().IsMatch(loginContent);
+        return document.DocumentNode.ContainsNode("//div[contains(@class, 'userfield')]//span[@class='loginname']");
     }
 
     protected override async Task LogoutImpl()
